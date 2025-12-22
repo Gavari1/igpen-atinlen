@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>EN Pig Latin Translator</title>
+  <title>Pig Latin Variants Translator</title>
 
   <style>
     :root {
@@ -65,7 +65,8 @@
       border: 1px solid var(--border);
       background: #d1d5db;
       cursor: pointer;
-      font-weight: 600;
+      font-weight: 700;
+      font-family: Arial, Helvetica, sans-serif;
     }
 
     label {
@@ -74,7 +75,8 @@
       align-items: center;
       color: #d1d5db;
       font-size: 14px;
-      font-weight: 600;
+      font-weight: 700;
+      font-family: Arial, Helvetica, sans-serif;
     }
 
     .hint {
@@ -82,15 +84,17 @@
       font-size: 13px;
       margin-top: 10px;
       color: #d1d5db;
+      font-family: Arial, Helvetica, sans-serif;
+      font-weight: 700;
     }
   </style>
 </head>
 
 <body>
 <div class="container">
-  <h1>EN Pig Latin Translator</h1>
+  <h1 id="title">Pig Latin Variants Translator</h1>
 
-  <textarea id="input" placeholder="Type English (or Pig Latin variant) here..."></textarea>
+  <textarea id="input" placeholder="Type English (or coded text) here..."></textarea>
 
   <div class="row">
     <button id="encode">Encode →</button>
@@ -98,39 +102,38 @@
     <button id="clear">Clear</button>
 
     <label>
-      Ending:
-      <select id="ending">
+      Mode:
+      <select id="mode">
         <option value="en" selected>-en</option>
         <option value="eg">-eg</option>
-        <option value="ay">-ay</option>
-        <option value="yay">-yay</option>
+        <option value="pig">Standard Pig Latin (-ay / -way)</option>
       </select>
     </label>
   </div>
 
   <textarea id="output" readonly></textarea>
 
-  <div class="hint" id="hint">
-    Rules (selected ending applies):
-    Consonant-start words move the starting consonant cluster to the end + ending (the → e-th + ending).
-    Vowel-start words: if ending is -yay, add “yay” (apple → appleyay); otherwise add the ending (are → areen / areeg).
-    “I” / “is” keep the base casing but always attach the ending: I → Ien, Is → Isen, is → isen.
-    Punctuation and spacing are preserved. Decode is best-effort (Pig Latin is inherently ambiguous).
-  </div>
+  <div class="hint" id="hint"></div>
 </div>
 
 <script>
+/* ===== Tokenizer (keeps punctuation chunks, keeps apostrophes inside words) ===== */
 function tokenize(text) {
   return text.match(/[A-Za-z]+(?:['’][A-Za-z]+)*|[^A-Za-z]+/g) || [];
 }
 
+/* ===== Caps detection ===== */
 function detectCapsStyle(word) {
   if (word === word.toUpperCase()) return "upper";
-  if (word[0] === word[0].toUpperCase() &&
-      word.slice(1) === word.slice(1).toLowerCase()) return "title";
+  if (word[0] === word[0].toUpperCase() && word.slice(1) === word.slice(1).toLowerCase())
+    return "title";
   return "lower";
 }
 
+/* ===== Vowel logic =====
+   - A E I O U are vowels always
+   - Y is treated like a vowel ONLY if it's not the first letter
+*/
 function isVowel(ch, idx) {
   const c = ch.toLowerCase();
   if ("aeiou".includes(c)) return true;
@@ -138,52 +141,82 @@ function isVowel(ch, idx) {
   return false;
 }
 
-const endingEl = document.getElementById("ending");
-function getEnding() {
-  return endingEl.value; // "en" | "eg" | "ay" | "yay"
+const modeEl = document.getElementById("mode");
+const hintEl = document.getElementById("hint");
+
+function renderHint() {
+  const m = modeEl.value;
+  if (m === "pig") {
+    hintEl.textContent =
+      "Standard Pig Latin: consonant-start words move consonant cluster to the end + 'ay' (going → oinggay, house → ousehay). " +
+      "Vowel-start words add 'way' (I → Iway, are → areway). Punctuation/spaces preserved. Decode is best-effort (Pig Latin is ambiguous).";
+  } else if (m === "eg") {
+    hintEl.textContent =
+      "-eg mode: consonant-start words move consonant cluster to the end + 'eg' (the → etheg, car → arceg). " +
+      "Vowel-start words just add 'eg' (are → areeg). I → Ieg, Is → Iseg, is → iseg. Punctuation/spaces preserved. Decode is best-effort.";
+  } else {
+    hintEl.textContent =
+      "-en mode: consonant-start words move consonant cluster to the end + 'en' (the → ethen, car → arcen). " +
+      "Vowel-start words just add 'en' (are → areen). I → Ien, Is → Isen, is → isen. Punctuation/spaces preserved. Decode is best-effort.";
+  }
+}
+modeEl.addEventListener("change", renderHint);
+renderHint();
+
+/* ===== Encode helpers ===== */
+function firstVowelIndex(letters) {
+  let first = -1;
+  for (let i = 0; i < letters.length; i++) {
+    if (isVowel(letters[i], i)) { first = i; break; }
+  }
+  return first;
 }
 
-/* Encode core letters with selected ending */
-function encodeLetters(letters, ending) {
+function encodeLetters(letters) {
   if (!letters) return letters;
+  const m = modeEl.value;
 
-  let firstVowel = -1;
-  for (let i = 0; i < letters.length; i++) {
-    if (isVowel(letters[i], i)) { firstVowel = i; break; }
+  const fv = firstVowelIndex(letters);
+
+  // Vowel-start (or no vowel)
+  if (fv === 0 || fv === -1) {
+    if (m === "pig") return letters + "way";   // standard pig latin (your vibe)
+    if (m === "eg")  return letters + "eg";
+    return letters + "en";
   }
 
-  // Vowel-start (or no vowel): Pig Latin usually uses "yay" for vowel-start
-  if (firstVowel === 0 || firstVowel === -1) {
-    if (ending === "yay") return letters + "yay";
-    return letters + ending; // en/eg/ay
-  }
+  const cluster = letters.slice(0, fv);
+  const rest = letters.slice(fv);
 
-  // Consonant cluster move + ending
-  return letters.slice(firstVowel) + letters.slice(0, firstVowel) + ending;
+  if (m === "pig") return rest + cluster + "ay";
+  if (m === "eg")  return rest + cluster + "eg";
+  return rest + cluster + "en";
 }
 
 function encodeWord(word) {
-  const ending = getEnding();
   const style = detectCapsStyle(word);
   const lower = word.toLowerCase();
+  if (!lower) return word;
 
-  // Special-case: I / is -> keep casing of base, but attach ending lowercase
+  // Special-case I / is: keep base casing but always attach suffix lowercase
   if (lower === "i" || lower === "is") {
-    const base = lower;           // "i" or "is"
-    const suffix = ending;        // always lowercase
-    if (style === "upper") return base.toUpperCase() + suffix;     // Ien / ISen etc
-    if (style === "title") return base[0].toUpperCase() + base.slice(1) + suffix; // Isen etc
-    return base + suffix;         // ien / isen
+    const base = lower;
+    const m = modeEl.value;
+    const suffix = (m === "pig") ? "way" : (m === "eg" ? "eg" : "en");
+
+    if (style === "upper") return base.toUpperCase() + suffix;         // Ien / ISen etc
+    if (style === "title") return base[0].toUpperCase() + base.slice(1) + suffix; // Isen
+    return base + suffix;                                              // ien / isen
   }
 
-  let coded = encodeLetters(lower, ending);
+  let coded = encodeLetters(lower);
 
   if (style === "upper") return coded.toUpperCase();
   if (style === "title") return coded[0].toUpperCase() + coded.slice(1);
   return coded;
 }
 
-/* Decode: remove ending; best-effort undo of cluster move */
+/* ===== Decode scoring ===== */
 const COMMON = new Set([
   "the","a","an","and","or","but","is","are","was","were","be","been","being",
   "i","you","he","she","it","we","they","me","him","her","us","them",
@@ -212,13 +245,10 @@ function scoreEnglishish(w) {
   return score;
 }
 
-function decodeLetters(core) {
+function bestRotateBack(core) {
   if (!core) return core;
 
-  // Candidate 0: vowel-start original (just removed ending)
-  const candidates = [core];
-
-  // Candidates: move last k letters to front (k=1..6)
+  const candidates = [core]; // vowel/no-move possibility
   const maxK = Math.min(6, core.length - 1);
   for (let k = 1; k <= maxK; k++) {
     candidates.push(core.slice(-k) + core.slice(0, -k));
@@ -226,42 +256,46 @@ function decodeLetters(core) {
 
   let best = candidates[0];
   let bestScore = scoreEnglishish(best);
-
   for (let i = 1; i < candidates.length; i++) {
     const sc = scoreEnglishish(candidates[i]);
-    if (sc > bestScore) {
-      bestScore = sc;
-      best = candidates[i];
-    }
+    if (sc > bestScore) { bestScore = sc; best = candidates[i]; }
   }
   return best;
 }
 
+/* ===== Decode ===== */
 function decodeWord(word) {
-  const ending = getEnding();
   const style = detectCapsStyle(word);
   const lower = word.toLowerCase();
+  const m = modeEl.value;
 
-  // Handle -yay vowel-case: must remove "yay" specifically
-  const mustEnd = (ending === "yay") ? "yay" : ending;
-  if (!lower.endsWith(mustEnd)) return word;
-
-  const stripped = lower.slice(0, -mustEnd.length);
-
-  // If it decodes to "i" or "is", restore casing nicely
-  let plain = decodeLetters(stripped);
-
-  if (plain === "i") {
-    // Always show I capitalized
-    plain = "I";
-    return plain;
+  // Determine which suffix to remove for this mode + token
+  let suffix = "";
+  if (m === "pig") {
+    // Standard pig latin: could end in "ay" or "way"
+    if (lower.endsWith("way")) suffix = "way";
+    else if (lower.endsWith("ay")) suffix = "ay";
+    else return word;
+  } else if (m === "eg") {
+    if (!lower.endsWith("eg")) return word;
+    suffix = "eg";
+  } else {
+    if (!lower.endsWith("en")) return word;
+    suffix = "en";
   }
+
+  const stripped = lower.slice(0, -suffix.length);
+  let plain = bestRotateBack(stripped);
+
+  // Make lone "i" appear as "I" in output (English convention)
+  if (plain === "i") plain = "I";
 
   if (style === "upper") return plain.toUpperCase();
   if (style === "title") return plain[0].toUpperCase() + plain.slice(1);
   return plain;
 }
 
+/* ===== Transform ===== */
 function transform(text, mode) {
   return tokenize(text).map(tok => {
     if (/^[A-Za-z]/.test(tok)) {
@@ -271,6 +305,7 @@ function transform(text, mode) {
   }).join("");
 }
 
+/* ===== UI ===== */
 const inputEl = document.getElementById("input");
 const outputEl = document.getElementById("output");
 
