@@ -149,7 +149,7 @@
   <div class="wrap">
     <header>
       <h1>Argot Translator</h1>
-      <p>Consonants become syllables. Optional: vowels are followed by a literal <b>P</b>. Punctuation preserved.</p>
+      <p>Each English letter becomes a fixed syllable. Vowels are atomic: <b>AP EP IP OP UP</b>. Punctuation preserved.</p>
     </header>
 
     <div class="grid">
@@ -179,11 +179,6 @@
           </div>
 
           <div class="pill">
-            <input type="checkbox" id="vowelsAddP">
-            <label for="vowelsAddP" style="margin:0;color:inherit;">Vowels add P (a→a+p)</label>
-          </div>
-
-          <div class="pill">
             <input type="checkbox" id="preserveCaps" checked>
             <label for="preserveCaps" style="margin:0;color:inherit;">Preserve capitalization</label>
           </div>
@@ -193,7 +188,7 @@
         </div>
 
         <div class="small" id="tipText">
-          Tip: Spaced mode shows chunks like <b>cak a ral</b>. Toggle <b>•</b> for <b>cak•a•ral</b>. With vowels+P you’ll see <b>a•p</b>.
+          Tip: Spaced mode shows chunks like <b>cak ap ral</b>. Toggle <b>•</b> for <b>cak•ap•ral</b>. With pipes: <b>cak•ap•ral | tak•op</b>.
         </div>
       </div>
 
@@ -210,16 +205,46 @@
   </div>
 
   <script>
-    // ====== CANON CONSONANT MAPPING ======
+    // ====== CANON MAPPING (INCLUDING ATOMIC VOWELS) ======
     const MAP = Object.freeze({
-      s:"sal", f:"fal", h:"hal", v:"val", z:"zal",
-      m:"man", n:"nan",
-      l:"lal", r:"ral", w:"wal", y:"yal",
-      b:"bak", c:"cak", d:"dak", g:"gak", k:"kal", p:"pak", t:"tak",
-      j:"jak", q:"kwa", x:"eks"
-    });
+      // Vowels (atomic)
+      a: "ap",
+      e: "ep",
+      i: "ip",
+      o: "op",
+      u: "up",
 
-    const VOWELS = new Set(["a","e","i","o","u"]);
+      // Fricatives (-l)
+      s: "sal",
+      f: "fal",
+      h: "hal",
+      v: "val",
+      z: "zal",
+
+      // Nasals (-n)
+      m: "man",
+      n: "nan",
+
+      // Liquids/glides (L-ending version)
+      l: "lal",
+      r: "ral",
+      w: "wal",
+      y: "yal",
+
+      // Stops (-k)
+      b: "bak",
+      c: "cak",
+      d: "dak",
+      g: "gak",
+      k: "kal",     // <-- your update (no CAK/KAK overlap)
+      p: "pak",
+      t: "tak",
+
+      // Extras
+      j: "jak",
+      q: "kwa",
+      x: "eks"
+    });
 
     const inputEl = document.getElementById("input");
     const outputEl = document.getElementById("output");
@@ -227,9 +252,7 @@
 
     const modeSpaced = document.getElementById("modeSpaced");
     const modeFused = document.getElementById("modeFused");
-
     const preserveCaps = document.getElementById("preserveCaps");
-    const vowelsAddP = document.getElementById("vowelsAddP");
 
     const useDots = document.getElementById("useDots");
     const usePipes = document.getElementById("usePipes");
@@ -244,16 +267,9 @@
     function isLetter(ch){ return /^[A-Za-z]$/.test(ch); }
     function isWordJoiner(ch){ return ch === "'" || ch === "-"; }
 
-    // returns an array of parts (because vowels+P becomes 2 chunks)
-    function mapCharToParts(low){
-      if (VOWELS.has(low)){
-        if (vowelsAddP.checked){
-          return [low, "p"];     // <-- THIS is the “vowel followed by letter P”
-        }
-        return [low];
-      }
-      if (MAP[low]) return [MAP[low]];
-      return [low];
+    // map a single character to exactly ONE token (vowels are atomic via MAP)
+    function mapChar(low){
+      return MAP[low] ?? low;
     }
 
     function translateWord(word, mode, keepCaps, dotSep){
@@ -271,7 +287,7 @@
         }
 
         const low = ch.toLowerCase();
-        parts.push(...mapCharToParts(low));
+        parts.push(mapChar(low));
       }
 
       let out;
@@ -291,6 +307,8 @@
       return out;
     }
 
+    // Insert " | " between WORDS (letter-runs) when enabled.
+    // We treat whitespace as the delimiter between words.
     function translateText(text, mode, keepCaps, dotSep, pipeSep){
       let i = 0;
       let out = "";
@@ -339,10 +357,11 @@
           continue;
         }
 
-        // punctuation
+        // punctuation/symbol
         out += pendingWS + ch;
         pendingWS = "";
 
+        // sentence-ending punctuation breaks word-chain for pipes
         if (/[.!?]/.test(ch)) lastWasWord = false;
 
         i++;
@@ -354,14 +373,18 @@
 
     function renderMapBox(){
       const lines = [];
-      lines.push("Vowels:");
-      lines.push("- default: a e i o u (pass through)");
-      lines.push("- when enabled: a→a+p, e→e+p, i→i+p, o→o+p, u→u+p");
+      lines.push("Vowels (atomic):");
+      lines.push("A → ap");
+      lines.push("E → ep");
+      lines.push("I → ip");
+      lines.push("O → op");
+      lines.push("U → up");
       lines.push("");
       lines.push("Consonants:");
-      const entries = Object.entries(MAP).sort((a,b)=>a[0].localeCompare(b[0]));
-      for (const [k,v] of entries){
-        lines.push(`${k.toUpperCase()} → ${v}`);
+      const consonantKeys = Object.keys(MAP).filter(k => !"aeiou".includes(k));
+      consonantKeys.sort((a,b)=>a.localeCompare(b));
+      for (const k of consonantKeys){
+        lines.push(`${k.toUpperCase()} → ${MAP[k]}`);
       }
       mapBoxEl.textContent = lines.join("\n");
     }
@@ -376,12 +399,12 @@
         usePipes.checked = false;
       }
       if (spaced && !useDots.checked){
-        usePipes.checked = false;
+        usePipes.checked = false; // pipes only when dots are on (your format)
       }
 
       tipText.innerHTML = spaced
-        ? `Tip: Spaced mode shows <b>cak a ral</b>. Toggle <b>•</b> for <b>cak•a•ral</b>. Vowels+P yields <b>a•p</b>. With pipes: <b>cak•a•ral | tak•o</b>.`
-        : `Tip: In fused mode you’ll get <b>cakaral</b> (no spaces).`;
+        ? `Tip: Spaced mode shows <b>cak ap ral</b>. Toggle <b>•</b> for <b>cak•ap•ral</b>. With pipes: <b>cak•ap•ral | tak•op</b>.`
+        : `Tip: In fused mode you’ll get <b>cakapral</b> (no spaces).`;
     }
 
     function update(){
@@ -398,7 +421,6 @@
     modeSpaced.addEventListener("change", update);
     modeFused.addEventListener("change", update);
     preserveCaps.addEventListener("change", update);
-    vowelsAddP.addEventListener("change", update);
     useDots.addEventListener("change", update);
     usePipes.addEventListener("change", update);
 
