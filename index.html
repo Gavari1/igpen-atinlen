@@ -3,202 +3,334 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>UM Pig Latin Translator</title>
+  <title>Soft Argot Translator</title>
 
   <style>
-    :root {
-      --bg: #0b132b;            /* NAVY */
-      --panel: #e5e5e5;
-      --border: rgba(0,0,0,0.2);
-      --text: #111827;
-      --title: #ffffff;
-      --hint: #d1d5db;
+    :root{
+      --bg:#0b132b;
+      --panel:#f3f4f6;
+      --card:#ffffff;
+      --text:#0f172a;
+      --muted:#64748b;
+      --border:rgba(15,23,42,0.15);
+      --accent:#38bdf8;
     }
-
-    * { box-sizing: border-box; }
-    html, body { overflow-x: hidden; }
-
-    body {
-      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
-      margin: 24px;
-      line-height: 1.35;
-      background: var(--bg);
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+      background: linear-gradient(180deg, var(--bg), #111827);
       color: var(--text);
+      padding: 24px;
     }
-
-    .container {
-      max-width: 820px;
+    .wrap{
+      max-width: 980px;
       margin: 0 auto;
-      width: 100%;
     }
-
-    h1 {
-      color: var(--title);
-      margin-bottom: 12px;
+    header{
+      color:#fff;
+      margin-bottom: 16px;
     }
-
-    textarea {
-      width: 100%;
-      min-height: 140px;
+    header h1{
+      margin:0 0 6px 0;
+      font-size: 22px;
+      letter-spacing: .3px;
+      font-weight: 750;
+    }
+    header p{
+      margin:0;
+      color: rgba(255,255,255,0.75);
+      font-size: 14px;
+      line-height: 1.4;
+    }
+    .grid{
+      display:grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+    @media (min-width: 900px){
+      .grid{ grid-template-columns: 1fr 1fr; }
+    }
+    .card{
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
       padding: 14px;
-      font-size: 16px;
-      font-family: Arial, Helvetica, sans-serif;
-      font-weight: bold;
+      box-shadow: 0 18px 45px rgba(0,0,0,0.18);
+    }
+    label{
+      display:block;
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+    textarea{
+      width:100%;
+      min-height: 210px;
+      resize: vertical;
+      padding: 12px;
       border-radius: 12px;
       border: 1px solid var(--border);
-      background: var(--panel);
-      color: var(--text);
       outline: none;
+      font-size: 14px;
+      line-height: 1.45;
     }
-
-    .row {
-      display: flex;
-      gap: 12px;
-      margin: 14px 0;
-      flex-wrap: wrap;
-      align-items: center;
+    textarea:focus{
+      border-color: rgba(56,189,248,.65);
+      box-shadow: 0 0 0 3px rgba(56,189,248,.22);
     }
-
-    button {
-      font-size: 15px;
-      padding: 10px 14px;
-      border-radius: 999px;
-      border: 1px solid var(--border);
-      background: #d1d5db;
-      cursor: pointer;
-      font-weight: 600;
-    }
-
-    .hint {
-      opacity: 0.9;
-      font-size: 13px;
+    .controls{
+      display:flex;
+      flex-wrap:wrap;
+      gap: 10px;
+      align-items:center;
       margin-top: 10px;
-      color: var(--hint);
+    }
+    .pill{
+      display:flex;
+      gap:8px;
+      align-items:center;
+      padding: 8px 10px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: #fff;
+      font-size: 13px;
+    }
+    .pill input{ transform: translateY(1px); }
+    button{
+      appearance:none;
+      border: 1px solid var(--border);
+      background: #fff;
+      padding: 9px 12px;
+      border-radius: 12px;
+      font-weight: 650;
+      cursor:pointer;
+      font-size: 13px;
+    }
+    button:hover{
+      border-color: rgba(56,189,248,.75);
+      box-shadow: 0 0 0 3px rgba(56,189,248,.18);
+    }
+    .small{
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 10px;
+      line-height: 1.35;
+    }
+    .mapbox{
+      margin-top: 10px;
+      padding: 10px;
+      border-radius: 12px;
+      background: #f8fafc;
+      border: 1px dashed rgba(15,23,42,0.2);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 12px;
+      color:#0f172a;
+      overflow:auto;
+      white-space: pre;
     }
   </style>
 </head>
 
 <body>
-<div class="container">
-  <h1 id="title">UM Pig Latin Translator</h1>
+  <div class="wrap">
+    <header>
+      <h1>Soft Argot Translator</h1>
+      <p>Consonants become your syllables; vowels (A E I O U) stay normal. Punctuation preserved. Choose spaced (learning) or fused (fluent).</p>
+    </header>
 
-  <textarea id="input" placeholder="Type English here..."></textarea>
+    <div class="grid">
+      <div class="card">
+        <label for="input">English input</label>
+        <textarea id="input" placeholder="Type here... e.g. My name is Adam and I want a car."></textarea>
 
-  <div class="row">
-    <button id="encode">Encode →</button>
-    <button id="clear">Clear</button>
+        <div class="controls">
+          <div class="pill">
+            <input type="radio" id="modeSpaced" name="mode" value="spaced" checked>
+            <label for="modeSpaced" style="margin:0;color:inherit;">Spaced (learning)</label>
+          </div>
+
+          <div class="pill">
+            <input type="radio" id="modeFused" name="mode" value="fused">
+            <label for="modeFused" style="margin:0;color:inherit;">Fused (fluent)</label>
+          </div>
+
+          <div class="pill">
+            <input type="checkbox" id="preserveCaps" checked>
+            <label for="preserveCaps" style="margin:0;color:inherit;">Preserve capitalization</label>
+          </div>
+
+          <button id="copyBtn" type="button">Copy output</button>
+          <button id="clearBtn" type="button">Clear</button>
+        </div>
+
+        <div class="small">
+          Tip: In spaced mode you’ll get letter-by-letter chunks like <b>cak a ra</b>. In fused mode you’ll get <b>cakara</b>.
+        </div>
+      </div>
+
+      <div class="card">
+        <label for="output">Translated output</label>
+        <textarea id="output" readonly placeholder="Output appears here..."></textarea>
+
+        <div class="small">Current mapping snapshot:</div>
+        <div class="mapbox" id="mapbox"></div>
+      </div>
+    </div>
   </div>
 
-  <textarea id="output" readonly placeholder="UM Pig Latin output..."></textarea>
+  <script>
+    // ====== YOUR CANON MAPPING (locked) ======
+    // Vowels: A E I O U pass through as themselves.
 
-  <div class="hint" id="hint">
-    Rules: vowel-start words add “um” (apple → appleum). Consonant-start words move the starting consonant cluster to the end + “um” (the → ethum, work → orkwum). Punctuation and spacing are preserved.
-  </div>
-</div>
+    const MAP = Object.freeze({
+      // Fricatives (-l)
+      s: "sal",
+      f: "fal",
+      h: "hal",
+      v: "val",
+      z: "zal",
 
-<script>
-/* ===== Tokenizer (keeps punctuation chunks, keeps apostrophes inside words) ===== */
-function tokenize(text) {
-  return text.match(/[A-Za-z]+(?:['’][A-Za-z]+)*|[^A-Za-z]+/g) || [];
-}
+      // Nasals (-n)
+      m: "man",
+      n: "nan",
 
-/* ===== Caps detection ===== */
-function detectCapsStyle(word) {
-  if (word === word.toUpperCase()) return "upper";
-  if (word[0] === word[0].toUpperCase() && word.slice(1) === word.slice(1).toLowerCase()) return "title";
-  return "lower";
-}
+      // Liquids/glides (open)
+      l: "la",
+      r: "ra",
+      w: "wa",
+      y: "ya",
 
-/* ===== Apostrophe-safe helpers ===== */
-function splitApostrophes(word) {
-  const letters = [];
-  const apos = [];
-  [...word].forEach((c, i) => {
-    if (c === "'" || c === "’") apos.push({ i, c });
-    else letters.push(c);
-  });
-  return { letters: letters.join(""), apos };
-}
+      // Stops (-k)
+      b: "bak",
+      c: "cak",
+      d: "dak",
+      g: "gak",
+      k: "kak",
+      p: "pak",
+      t: "tak",
 
-function restoreApostrophes(word, apos) {
-  const arr = [...word];
-  apos.forEach(({ i, c }) => {
-    const idx = Math.max(0, Math.min(i, arr.length));
-    arr.splice(idx, 0, c);
-  });
-  return arr.join("");
-}
+      // Added per your request:
+      q: "kwa",
+      x: "eks"
+    });
 
-/* ===== Vowel logic =====
-   - A E I O U are vowels always
-   - Y is treated like a vowel ONLY if it's not the first letter
-*/
-function isVowel(ch, idx) {
-  const c = ch.toLowerCase();
-  if ("aeiou".includes(c)) return true;
-  if (c === "y" && idx > 0) return true;
-  return false;
-}
+    const VOWELS = new Set(["a","e","i","o","u"]);
+    const inputEl = document.getElementById("input");
+    const outputEl = document.getElementById("output");
+    const mapBoxEl = document.getElementById("mapbox");
 
-function firstVowelIndex(letters) {
-  for (let i = 0; i < letters.length; i++) {
-    if (isVowel(letters[i], i)) return i;
-  }
-  return -1;
-}
+    const modeSpaced = document.getElementById("modeSpaced");
+    const modeFused = document.getElementById("modeFused");
+    const preserveCaps = document.getElementById("preserveCaps");
+    const copyBtn = document.getElementById("copyBtn");
+    const clearBtn = document.getElementById("clearBtn");
 
-/* ===== Encoder core (UM) ===== */
-function encodeLettersUM(letters) {
-  if (!letters) return letters;
+    function isLetter(ch){
+      return /^[A-Za-z]$/.test(ch);
+    }
 
-  const fv = firstVowelIndex(letters);
+    function translateWord(word, mode, keepCaps){
+      // Determine capitalization pattern
+      const isAllCaps = keepCaps && word.length > 1 && word === word.toUpperCase();
+      const isTitle = keepCaps && /^[A-Z][a-z]+$/.test(word);
 
-  // vowel-start (or no vowel found) => just add "um"
-  if (fv === 0 || fv === -1) return letters + "um";
+      const parts = [];
+      for (const ch of word){
+        const low = ch.toLowerCase();
+        if (VOWELS.has(low)) {
+          parts.push(low); // vowels pass through
+        } else if (MAP[low]) {
+          parts.push(MAP[low]);
+        } else {
+          // Unknown letter (shouldn't happen for A-Z but safe)
+          parts.push(low);
+        }
+      }
 
-  // consonant-start => move consonant cluster to end + "um"
-  return letters.slice(fv) + letters.slice(0, fv) + "um";
-}
+      let out;
+      if (mode === "spaced"){
+        out = parts.join(" ");
+      } else {
+        // fused: remove spaces; keep it simple and deterministic
+        out = parts.join("");
+      }
 
-function applyCasing(codedLower, style) {
-  if (style === "upper") return codedLower.toUpperCase();
-  if (style === "title") return codedLower[0].toUpperCase() + codedLower.slice(1);
-  return codedLower;
-}
+      // Apply capitalization style to output
+      if (keepCaps){
+        if (isAllCaps){
+          out = out.toUpperCase();
+        } else if (isTitle){
+          out = out.charAt(0).toUpperCase() + out.slice(1);
+        }
+      }
+      return out;
+    }
 
-function encodeWordUM(word) {
-  const style = detectCapsStyle(word);
-  const lower = word.toLowerCase();
-  const { letters, apos } = splitApostrophes(lower);
-  if (!letters) return word;
+    function translateText(text, mode, keepCaps){
+      // Walk through text, translating only sequences of letters; preserve punctuation/spaces.
+      let i = 0;
+      let out = "";
 
-  const codedLetters = encodeLettersUM(letters);
-  const coded = restoreApostrophes(codedLetters, apos);
+      while (i < text.length){
+        const ch = text[i];
+        if (isLetter(ch)){
+          let j = i;
+          while (j < text.length && isLetter(text[j])) j++;
+          const word = text.slice(i, j);
+          out += translateWord(word, mode, keepCaps);
+          i = j;
+        } else {
+          out += ch;
+          i++;
+        }
+      }
+      return out;
+    }
 
-  return applyCasing(coded, style);
-}
+    function renderMapBox(){
+      const lines = [];
 
-/* ===== Transform (encode only) ===== */
-function encodeTextUM(text) {
-  return tokenize(text).map(tok => {
-    if (/^[A-Za-z]/.test(tok)) return encodeWordUM(tok);
-    return tok;
-  }).join("");
-}
+      lines.push("Vowels (pass through): A E I O U");
+      lines.push("");
+      lines.push("Consonants:");
+      const entries = Object.entries(MAP).sort((a,b)=>a[0].localeCompare(b[0]));
+      for (const [k,v] of entries){
+        lines.push(`${k.toUpperCase()} → ${v}`);
+      }
+      mapBoxEl.textContent = lines.join("\n");
+    }
 
-/* ===== UI ===== */
-const inputEl = document.getElementById("input");
-const outputEl = document.getElementById("output");
+    function update(){
+      const mode = modeFused.checked ? "fused" : "spaced";
+      const keepCaps = preserveCaps.checked;
+      outputEl.value = translateText(inputEl.value, mode, keepCaps);
+    }
 
-document.getElementById("encode").onclick = () => {
-  outputEl.value = encodeTextUM(inputEl.value);
-};
+    inputEl.addEventListener("input", update);
+    modeSpaced.addEventListener("change", update);
+    modeFused.addEventListener("change", update);
+    preserveCaps.addEventListener("change", update);
 
-document.getElementById("clear").onclick = () => {
-  inputEl.value = "";
-  outputEl.value = "";
-  inputEl.focus();
-};
-</script>
+    copyBtn.addEventListener("click", async () => {
+      try{
+        await navigator.clipboard.writeText(outputEl.value);
+        copyBtn.textContent = "Copied!";
+        setTimeout(()=>copyBtn.textContent="Copy output", 900);
+      } catch(e){
+        alert("Copy failed (clipboard permission). You can manually select + copy.");
+      }
+    });
+
+    clearBtn.addEventListener("click", () => {
+      inputEl.value = "";
+      outputEl.value = "";
+      inputEl.focus();
+    });
+
+    // init
+    renderMapBox();
+    update();
+  </script>
 </body>
 </html>
