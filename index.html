@@ -128,6 +128,44 @@
       color:#0f172a;
       overflow:auto;
       white-space: pre;
+      max-height: 220px; /* keeps it from taking over mobile when expanded */
+    }
+
+    /* ✅ Collapsible mapping section */
+    details.mapping-details{
+      margin-top: 10px;
+      border-top: 1px solid rgba(15,23,42,0.08);
+      padding-top: 8px;
+    }
+    details.mapping-details > summary{
+      cursor: pointer;
+      list-style: none;
+      user-select: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--muted);
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: #fff;
+    }
+    details.mapping-details > summary::-webkit-details-marker{
+      display:none;
+    }
+    details.mapping-details > summary::before{
+      content: "▸";
+      font-size: 12px;
+      opacity: 0.9;
+      transform: translateY(-0.5px);
+    }
+    details.mapping-details[open] > summary::before{
+      content: "▾";
+    }
+    details.mapping-details > summary:hover{
+      border-color: rgba(56,189,248,.75);
+      box-shadow: 0 0 0 3px rgba(56,189,248,.18);
     }
   </style>
 </head>
@@ -173,8 +211,11 @@
         <label for="output">Translated output</label>
         <textarea id="output" readonly placeholder="Output appears here..."></textarea>
 
-        <div class="small">Current mapping snapshot:</div>
-        <div class="mapbox" id="mapbox"></div>
+        <!-- ✅ Collapsed by default -->
+        <details class="mapping-details">
+          <summary>Show mapping</summary>
+          <div class="mapbox" id="mapbox"></div>
+        </details>
       </div>
     </div>
   </div>
