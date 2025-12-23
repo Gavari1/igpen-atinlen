@@ -128,7 +128,7 @@
       color:#0f172a;
       overflow:auto;
       white-space: pre;
-      max-height: 220px; /* keeps it from taking over mobile when expanded */
+      max-height: 220px;
     }
 
     /* ✅ Collapsible mapping section */
@@ -193,6 +193,11 @@
             <label for="modeFused" style="margin:0;color:inherit;">Fused (fluent)</label>
           </div>
 
+          <div class="pill" id="sepPill">
+            <input type="checkbox" id="useDots">
+            <label for="useDots" style="margin:0;color:inherit;">Use • separators</label>
+          </div>
+
           <div class="pill">
             <input type="checkbox" id="preserveCaps" checked>
             <label for="preserveCaps" style="margin:0;color:inherit;">Preserve capitalization</label>
@@ -202,8 +207,8 @@
           <button id="clearBtn" type="button">Clear</button>
         </div>
 
-        <div class="small">
-          Tip: In spaced mode you’ll get letter-by-letter chunks like <b>cak a ra</b>. In fused mode you’ll get <b>cakara</b>.
+        <div class="small" id="tipText">
+          Tip: In spaced mode you’ll get letter-by-letter chunks like <b>cak a ral</b>. In fused mode you’ll get <b>cakaral</b>.
         </div>
       </div>
 
@@ -211,7 +216,6 @@
         <label for="output">Translated output</label>
         <textarea id="output" readonly placeholder="Output appears here..."></textarea>
 
-        <!-- ✅ Collapsed by default -->
         <details class="mapping-details">
           <summary>Show mapping</summary>
           <div class="mapbox" id="mapbox"></div>
@@ -236,7 +240,7 @@
       m: "man",
       n: "nan",
 
-      // Liquids/glides (open)
+      // Liquids/glides (L-ending version)
       l: "lal",
       r: "ral",
       w: "wal",
@@ -251,7 +255,8 @@
       p: "pak",
       t: "tak",
 
-      // Added per your request:
+      // Extras
+      j: "jak",
       q: "kwa",
       x: "eks"
     });
@@ -264,6 +269,10 @@
     const modeSpaced = document.getElementById("modeSpaced");
     const modeFused = document.getElementById("modeFused");
     const preserveCaps = document.getElementById("preserveCaps");
+    const useDots = document.getElementById("useDots");
+    const sepPill = document.getElementById("sepPill");
+    const tipText = document.getElementById("tipText");
+
     const copyBtn = document.getElementById("copyBtn");
     const clearBtn = document.getElementById("clearBtn");
 
@@ -271,8 +280,7 @@
       return /^[A-Za-z]$/.test(ch);
     }
 
-    function translateWord(word, mode, keepCaps){
-      // Determine capitalization pattern
+    function translateWord(word, mode, keepCaps, dotSep){
       const isAllCaps = keepCaps && word.length > 1 && word === word.toUpperCase();
       const isTitle = keepCaps && /^[A-Z][a-z]+$/.test(word);
 
@@ -280,24 +288,21 @@
       for (const ch of word){
         const low = ch.toLowerCase();
         if (VOWELS.has(low)) {
-          parts.push(low); // vowels pass through
+          parts.push(low);
         } else if (MAP[low]) {
           parts.push(MAP[low]);
         } else {
-          // Unknown letter (shouldn't happen for A-Z but safe)
           parts.push(low);
         }
       }
 
       let out;
       if (mode === "spaced"){
-        out = parts.join(" ");
+        out = dotSep ? parts.join("•") : parts.join(" ");
       } else {
-        // fused: remove spaces; keep it simple and deterministic
         out = parts.join("");
       }
 
-      // Apply capitalization style to output
       if (keepCaps){
         if (isAllCaps){
           out = out.toUpperCase();
@@ -308,8 +313,7 @@
       return out;
     }
 
-    function translateText(text, mode, keepCaps){
-      // Walk through text, translating only sequences of letters; preserve punctuation/spaces.
+    function translateText(text, mode, keepCaps, dotSep){
       let i = 0;
       let out = "";
 
@@ -319,7 +323,7 @@
           let j = i;
           while (j < text.length && isLetter(text[j])) j++;
           const word = text.slice(i, j);
-          out += translateWord(word, mode, keepCaps);
+          out += translateWord(word, mode, keepCaps, dotSep);
           i = j;
         } else {
           out += ch;
@@ -331,7 +335,6 @@
 
     function renderMapBox(){
       const lines = [];
-
       lines.push("Vowels (pass through): A E I O U");
       lines.push("");
       lines.push("Consonants:");
@@ -342,16 +345,30 @@
       mapBoxEl.textContent = lines.join("\n");
     }
 
+    function syncUI(){
+      const spaced = modeSpaced.checked;
+      sepPill.style.display = spaced ? "flex" : "none";
+
+      if (!spaced) useDots.checked = false;
+
+      tipText.innerHTML = spaced
+        ? `Tip: Spaced mode shows letter chunks like <b>cak a ral</b>. Toggle <b>• separators</b> for <b>cak•a•ral</b>.`
+        : `Tip: In fused mode you’ll get <b>cakaral</b> (no spaces).`;
+    }
+
     function update(){
+      syncUI();
       const mode = modeFused.checked ? "fused" : "spaced";
       const keepCaps = preserveCaps.checked;
-      outputEl.value = translateText(inputEl.value, mode, keepCaps);
+      const dotSep = useDots.checked && mode === "spaced";
+      outputEl.value = translateText(inputEl.value, mode, keepCaps, dotSep);
     }
 
     inputEl.addEventListener("input", update);
     modeSpaced.addEventListener("change", update);
     modeFused.addEventListener("change", update);
     preserveCaps.addEventListener("change", update);
+    useDots.addEventListener("change", update);
 
     copyBtn.addEventListener("click", async () => {
       try{
@@ -367,9 +384,9 @@
       inputEl.value = "";
       outputEl.value = "";
       inputEl.focus();
+      update();
     });
 
-    // init
     renderMapBox();
     update();
   </script>
