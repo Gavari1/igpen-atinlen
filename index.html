@@ -70,7 +70,7 @@
     <div class="grid">
       <div class="card">
         <label for="input">English input</label>
-        <textarea id="input" placeholder="Type here... e.g. I was throwing shoes through the shop."></textarea>
+        <textarea id="input" placeholder="Type here... e.g. Today my sister got her diploma."></textarea>
 
         <div class="controls">
           <div class="pill">
@@ -87,6 +87,7 @@
           <b>throw → thralathrowthray</b>,
           <b>shop → shalashopshay</b>,
           <b>apple → applelay</b>,
+          <b>my → malamymay</b>,
           <b>I → I</b>.
         </div>
       </div>
@@ -99,7 +100,11 @@
   </div>
 
   <script>
-    const VOWELS = new Set(["a","e","i","o","u"]);
+    // AEIOU are vowels always.
+    // Y is treated as a vowel only when:
+    //   - it is NOT the first letter, AND
+    //   - the word contains no AEIOU anywhere (fixes "my" => m + y[vowel])
+    const CORE_VOWELS = new Set(["a","e","i","o","u"]);
 
     const inputEl = document.getElementById("input");
     const outputEl = document.getElementById("output");
@@ -122,12 +127,28 @@
       return translated;
     }
 
-    // Get initial consonant cluster (Pig Latin style): all starting consonants up to first vowel.
-    // Example: throw -> "thr", shop -> "sh", closet -> "cl", yellow -> "" (vowel treated below)
+    function hasCoreVowel(wordLower){
+      for (const ch of wordLower){
+        if (CORE_VOWELS.has(ch)) return true;
+      }
+      return false;
+    }
+
+    function isVowelAt(wordLower, idx){
+      const ch = wordLower[idx];
+      if (CORE_VOWELS.has(ch)) return true;
+
+      // Y-as-vowel rule (only if no AEIOU and not first char)
+      if (ch === "y" && idx > 0 && !hasCoreVowel(wordLower)) return true;
+
+      return false;
+    }
+
+    // Pig-Latin-ish initial consonant cluster: all starting consonants up to first vowel.
     function getInitialCluster(wordLower){
       let i = 0;
-      while (i < wordLower.length && !VOWELS.has(wordLower[i])) i++;
-      return wordLower.slice(0, i); // may be "" if vowel-start
+      while (i < wordLower.length && !isVowelAt(wordLower, i)) i++;
+      return wordLower.slice(0, i); // "" if vowel-start
     }
 
     function translateWord(word){
@@ -138,15 +159,16 @@
 
       const low = word.toLowerCase();
 
-      // Vowel-start: add "lay"
-      if (VOWELS.has(low[0])){
+      // Vowel-start (including "y" only if it qualifies by rule above at index 0—which it doesn't)
+      if (isVowelAt(low, 0)){
         const t = word + "lay";
         return styleLike(word, t);
       }
 
       // Consonant-start: cluster ala + word + cluster ay
       const cluster = getInitialCluster(low);
-      // Safety: if somehow no vowel exists (e.g., "hmm"), treat first letter as the cluster
+
+      // If no vowel at all (e.g., "hmm"), fall back to first letter
       const c = cluster.length ? cluster : low[0];
 
       const t = `${c}ala${word}${c}ay`;
