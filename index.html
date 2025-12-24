@@ -3,309 +3,169 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Conlang Code Translator (Pig+an / Vowel+a)</title>
+  <title>ALA-AY Translator</title>
   <style>
     :root{
-      --bg:#0b132b;
-      --panel:#f3f4f6;
-      --card:#ffffff;
-      --text:#0f172a;
-      --muted:#64748b;
-      --border:rgba(15,23,42,0.15);
-      --accent:#38bdf8;
+      --bg:#0b132b; --card:#ffffff; --text:#0f172a; --muted:#64748b;
+      --border:rgba(15,23,42,.15); --accent:#38bdf8;
     }
     *{box-sizing:border-box}
     body{
-      margin:0;
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
-      background: linear-gradient(180deg, var(--bg), #111827);
-      color: var(--text);
-      padding: 18px;
+      margin:0; padding:24px;
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+      background:linear-gradient(180deg,var(--bg),#111827);
+      color:var(--text);
     }
     .wrap{max-width:980px;margin:0 auto}
-    header{color:#fff;margin-bottom:14px}
-    header h1{margin:0 0 6px 0;font-size:20px;letter-spacing:.2px;font-weight:800}
-    header p{margin:0;color:rgba(255,255,255,.78);font-size:13px;line-height:1.35}
-
+    header{color:#fff;margin-bottom:16px}
+    header h1{margin:0 0 6px;font-size:22px;font-weight:800;letter-spacing:.3px}
+    header p{margin:0;color:rgba(255,255,255,.75);font-size:14px;line-height:1.4}
     .grid{display:grid;grid-template-columns:1fr;gap:12px}
-    @media (min-width: 900px){ .grid{grid-template-columns:1fr 1fr;} }
-
+    @media(min-width:900px){.grid{grid-template-columns:1fr 1fr}}
     .card{
-      background:var(--card);
-      border:1px solid var(--border);
-      border-radius:14px;
-      padding:14px;
+      background:var(--card); border:1px solid var(--border);
+      border-radius:14px; padding:14px;
       box-shadow:0 18px 45px rgba(0,0,0,.18);
     }
     label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}
     textarea{
-      width:100%;
-      min-height:220px;
-      resize:vertical;
-      padding:12px;
-      border-radius:12px;
-      border:1px solid var(--border);
-      outline:none;
-      font-size:14px;
-      line-height:1.45;
+      width:100%; min-height:220px; resize:vertical;
+      padding:12px; border-radius:12px; border:1px solid var(--border);
+      outline:none; font-size:14px; line-height:1.45;
     }
     textarea:focus{
       border-color:rgba(56,189,248,.65);
       box-shadow:0 0 0 3px rgba(56,189,248,.22);
     }
-
-    .controls{
-      display:flex;
-      flex-wrap:wrap;
-      gap:10px;
-      align-items:center;
-      margin-top:10px;
-    }
-    .pill{
-      display:flex;
-      gap:8px;
-      align-items:center;
-      padding:8px 10px;
-      border:1px solid var(--border);
-      border-radius:999px;
-      background:#fff;
-      font-size:13px;
-    }
-    .pill input{transform:translateY(1px)}
+    .controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:10px}
     button{
-      appearance:none;
-      border:1px solid var(--border);
-      background:#fff;
-      padding:9px 12px;
-      border-radius:12px;
-      font-weight:700;
-      cursor:pointer;
-      font-size:13px;
+      appearance:none; border:1px solid var(--border); background:#fff;
+      padding:9px 12px; border-radius:12px; font-weight:700;
+      cursor:pointer; font-size:13px;
     }
     button:hover{
       border-color:rgba(56,189,248,.75);
       box-shadow:0 0 0 3px rgba(56,189,248,.18);
     }
-    .small{
-      font-size:12px;
-      color:var(--muted);
-      margin-top:10px;
-      line-height:1.35;
+    .small{font-size:12px;color:var(--muted);margin-top:10px;line-height:1.35}
+    .pill{
+      display:inline-flex; gap:8px; align-items:center;
+      padding:8px 10px; border:1px solid var(--border);
+      border-radius:999px; background:#fff; font-size:13px;
     }
-    .mapbox{
-      margin-top:10px;
-      padding:10px;
-      border-radius:12px;
-      background:#f8fafc;
-      border:1px dashed rgba(15,23,42,.2);
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-      font-size:12px;
-      color:#0f172a;
-      overflow:auto;
-      white-space:pre-wrap;
-    }
+    .pill input{transform:translateY(1px)}
   </style>
 </head>
 
 <body>
   <div class="wrap">
     <header>
-      <h1>Pig Latin + “an” / Vowel + “a” Translator</h1>
+      <h1>ALA-AY Translator</h1>
       <p>
-        Words starting with a consonant use Pig Latin (clusters too) + <b>an</b>.
-        Words starting with a vowel just add <b>a</b>. Punctuation preserved.
+        Consonant-start words: <b>{L}ala + word + {L}ay</b>. Vowel-start words: <b>word + lay</b>.
+        The word <b>I</b> stays unchanged. Punctuation preserved.
       </p>
     </header>
 
     <div class="grid">
       <div class="card">
         <label for="input">English input</label>
-        <textarea id="input" placeholder="Type here... e.g. The car is white and parked at my house."></textarea>
+        <textarea id="input" placeholder="Type here... e.g. I was watching a football game."></textarea>
 
         <div class="controls">
           <div class="pill">
             <input type="checkbox" id="preserveCaps" checked>
             <label for="preserveCaps" style="margin:0;color:inherit;">Preserve capitalization</label>
           </div>
-
           <button id="copyBtn" type="button">Copy output</button>
           <button id="clearBtn" type="button">Clear</button>
         </div>
 
         <div class="small">
-          Examples: <b>the → ethan</b>, <b>car → arcan</b>, <b>is → isa</b>, <b>apple → applea</b>, <b>street → eetstran</b>.
+          Examples: <b>watching → walawatchingway</b>, <b>Food → falaFoodfay</b>, <b>apple → applelay</b>, <b>I → I</b>.
         </div>
       </div>
 
       <div class="card">
         <label for="output">Translated output</label>
         <textarea id="output" readonly placeholder="Output appears here..."></textarea>
-
-        <div class="mapbox" id="rulesBox"></div>
       </div>
     </div>
   </div>
 
   <script>
-    // ===== Core rules =====
-    // - Vowel-start word: append "a"
-    // - Consonant-start word: move initial consonant cluster to end, append "an"
-    // Preserves punctuation/spaces.
-    // Allows internal apostrophes/hyphens within a word (e.g., don't, mother-in-law)
-
     const VOWELS = new Set(["a","e","i","o","u"]);
-
-    // Common English consonant clusters; longest-first matters.
-    // This is not "perfect phonetics" for every accent, but it's clean + works well.
-    const CLUSTERS = [
-      // 3+ letters
-      "squ","sch","scr","shr","spl","spr","str","thr",
-      // 2 letters
-      "bl","br","ch","cl","cr","dr","fl","fr","gl","gr","ph","pl","pr","sc","sh","sk","sl","sm","sn","sp","st","sw","th","tr","tw","wh","wr"
-    ];
 
     const inputEl = document.getElementById("input");
     const outputEl = document.getElementById("output");
-    const preserveCapsEl = document.getElementById("preserveCaps");
+    const preserveCaps = document.getElementById("preserveCaps");
     const copyBtn = document.getElementById("copyBtn");
     const clearBtn = document.getElementById("clearBtn");
-    const rulesBox = document.getElementById("rulesBox");
 
     function isLetter(ch){
       return /^[A-Za-z]$/.test(ch);
     }
 
-    function isWordJoiner(ch){
-      return ch === "'" || ch === "-";
+    function styleLike(originalWord, translated){
+      // Preserve ALLCAPS or TitleCase (simple + reliable)
+      if (!preserveCaps.checked) return translated;
+
+      const isAllCaps = originalWord.length > 1 && originalWord === originalWord.toUpperCase();
+      const isTitle = /^[A-Z][a-z]+$/.test(originalWord);
+
+      if (isAllCaps) return translated.toUpperCase();
+      if (isTitle) return translated.charAt(0).toUpperCase() + translated.slice(1);
+      return translated;
     }
 
-    function getCaseStyle(word){
-      return {
-        isAllCaps: word.length > 1 && word === word.toUpperCase(),
-        isTitle: /^[A-Z][a-z]+$/.test(word),
-      };
-    }
+    function translateWord(word){
+      if (!word) return word;
 
-    function applyCaseStyle(out, style){
-      if (style.isAllCaps) return out.toUpperCase();
-      if (style.isTitle) return out.charAt(0).toUpperCase() + out.slice(1);
-      return out;
-    }
+      // Special case: I stays as-is (exactly I or i)
+      if (word === "I" || word === "i") return word;
 
-    function initialCluster(lowerWord){
-      // Find the initial consonant cluster (letters only) using our cluster list.
-      for (const c of CLUSTERS){
-        if (lowerWord.startsWith(c)) return c;
-      }
-      // Otherwise, the first letter is the cluster (if it’s not a vowel)
-      return lowerWord[0];
-    }
+      const first = word[0];
+      const lowFirst = first.toLowerCase();
 
-    function translateWord(word, keepCaps){
-      const style = keepCaps ? getCaseStyle(word) : {isAllCaps:false,isTitle:false};
-
-      // We'll do the transform on lowercase, then re-apply capitalization style.
-      // Keep inner joiners (apostrophes/hyphens) by translating segments around them.
-      const parts = [];
-      let buf = "";
-
-      const flushBuf = () => {
-        if (!buf) return;
-        parts.push(translateSimpleAlpha(buf));
-        buf = "";
-      };
-
-      for (let i = 0; i < word.length; i++){
-        const ch = word[i];
-        if (isLetter(ch)){
-          buf += ch;
-        } else if (isWordJoiner(ch) && buf && (i+1 < word.length) && isLetter(word[i+1])){
-          // keep joiner inside the word (e.g., don't, mother-in-law)
-          flushBuf();
-          parts.push(ch);
-        } else {
-          // unexpected internal char; treat it as boundary
-          flushBuf();
-          parts.push(ch);
-        }
-      }
-      flushBuf();
-
-      const out = parts.join("");
-      return keepCaps ? applyCaseStyle(out, style) : out;
-    }
-
-    function translateSimpleAlpha(alphaWord){
-      const w = alphaWord.toLowerCase();
-      if (!w.length) return w;
-
-      // vowel-start
-      if (VOWELS.has(w[0])){
-        return w + "a";
+      // Vowel-start: add "lay" suffix
+      if (VOWELS.has(lowFirst)){
+        const t = word + "lay";
+        return styleLike(word, t);
       }
 
-      // consonant-start => Pig Latin + "an"
-      const cl = initialCluster(w);
-      return w.slice(cl.length) + cl + "an";
+      // Consonant-start: {L}ala + word + {L}ay (use lowercase L in affixes for consistency)
+      const L = lowFirst;
+      const t = `${L}ala${word}${L}ay`;
+      return styleLike(word, t);
     }
 
-    function translateText(text, keepCaps){
+    function translateText(text){
       let i = 0;
       let out = "";
 
       while (i < text.length){
         const ch = text[i];
 
-        // Start of a word (letter)
         if (isLetter(ch)){
           let j = i;
-
-          // Word token: letters with optional internal ' or -
-          while (j < text.length){
-            const cj = text[j];
-            if (isLetter(cj)) { j++; continue; }
-            if (isWordJoiner(cj) && j+1 < text.length && isLetter(text[j+1])) { j++; continue; }
-            break;
-          }
-
+          while (j < text.length && isLetter(text[j])) j++;
           const word = text.slice(i, j);
-          out += translateWord(word, keepCaps);
+          out += translateWord(word);
           i = j;
-          continue;
+        } else {
+          out += ch; // punctuation/space preserved
+          i++;
         }
-
-        // Non-word char (space/punct) passes through
-        out += ch;
-        i++;
       }
-
       return out;
     }
 
     function update(){
-      outputEl.value = translateText(inputEl.value, preserveCapsEl.checked);
-    }
-
-    function renderRules(){
-      rulesBox.textContent =
-`RULES
-1) Vowel-start words: add "a"
-   is → isa
-   apple → applea
-
-2) Consonant-start words: Pig Latin + "an" (clusters too)
-   the → ethan (th)
-   car → arcan (c)
-   street → eetstran (str)
-
-NOTES
-- Punctuation preserved.
-- Apostrophes/hyphens inside words are kept (don't, mother-in-law).
-- Cluster list is tweakable in CLUSTERS[].`;
+      outputEl.value = translateText(inputEl.value);
     }
 
     inputEl.addEventListener("input", update);
-    preserveCapsEl.addEventListener("change", update);
+    preserveCaps.addEventListener("change", update);
 
     copyBtn.addEventListener("click", async () => {
       try{
@@ -321,9 +181,9 @@ NOTES
       inputEl.value = "";
       outputEl.value = "";
       inputEl.focus();
+      update();
     });
 
-    renderRules();
     update();
   </script>
 </body>
