@@ -3,201 +3,106 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Two-Digit Cipher (00 word break)</title>
+  <title>Conlang Code Translator (Pig+an / Vowel+a)</title>
   <style>
     :root{
       --bg:#0b132b;
-      --panel:#0f172a;
+      --panel:#f3f4f6;
       --card:#ffffff;
       --text:#0f172a;
       --muted:#64748b;
-      --border:rgba(15,23,42,0.14);
+      --border:rgba(15,23,42,0.15);
       --accent:#38bdf8;
-      --good:#22c55e;
-      --bad:#ef4444;
     }
     *{box-sizing:border-box}
     body{
       margin:0;
       font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
-      background: radial-gradient(1000px 600px at 10% 0%, #1f2a56 0%, var(--bg) 45%, #0b1024 100%);
-      color:#fff;
+      background: linear-gradient(180deg, var(--bg), #111827);
+      color: var(--text);
       padding: 18px;
     }
-    .wrap{ max-width: 980px; margin: 0 auto; }
-    header{ margin-bottom: 14px; }
-    h1{
-      margin:0 0 6px 0;
-      font-size: 20px;
-      letter-spacing:.2px;
-      font-weight: 800;
-    }
-    header p{
-      margin:0;
-      color: rgba(255,255,255,0.78);
-      font-size: 13px;
-      line-height: 1.35;
-    }
+    .wrap{max-width:980px;margin:0 auto}
+    header{color:#fff;margin-bottom:14px}
+    header h1{margin:0 0 6px 0;font-size:20px;letter-spacing:.2px;font-weight:800}
+    header p{margin:0;color:rgba(255,255,255,.78);font-size:13px;line-height:1.35}
 
-    .grid{
-      display:grid;
-      grid-template-columns: 1fr;
-      gap: 12px;
-    }
-    @media (min-width: 900px){
-      .grid{ grid-template-columns: 1fr 1fr; }
-    }
+    .grid{display:grid;grid-template-columns:1fr;gap:12px}
+    @media (min-width: 900px){ .grid{grid-template-columns:1fr 1fr;} }
 
     .card{
-      background: rgba(255,255,255,0.96);
-      color: var(--text);
-      border: 1px solid rgba(255,255,255,0.06);
-      border-radius: 16px;
-      padding: 14px;
-      box-shadow: 0 18px 55px rgba(0,0,0,0.35);
+      background:var(--card);
+      border:1px solid var(--border);
+      border-radius:14px;
+      padding:14px;
+      box-shadow:0 18px 45px rgba(0,0,0,.18);
     }
-
-    label{
-      display:block;
-      font-size: 12px;
-      color: var(--muted);
-      margin-bottom: 6px;
-      font-weight: 650;
-    }
-
-    textarea, input[type="text"]{
-      width:100%;
-      border-radius: 14px;
-      border: 1px solid var(--border);
-      outline: none;
-      font-size: 15px;
-      line-height: 1.45;
-      padding: 12px;
-      background:#fff;
-      color:#0f172a;
-    }
+    label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}
     textarea{
-      min-height: 200px;
-      resize: vertical;
+      width:100%;
+      min-height:220px;
+      resize:vertical;
+      padding:12px;
+      border-radius:12px;
+      border:1px solid var(--border);
+      outline:none;
+      font-size:14px;
+      line-height:1.45;
     }
-    textarea:focus, input[type="text"]:focus{
-      border-color: rgba(56,189,248,.75);
-      box-shadow: 0 0 0 3px rgba(56,189,248,.22);
+    textarea:focus{
+      border-color:rgba(56,189,248,.65);
+      box-shadow:0 0 0 3px rgba(56,189,248,.22);
     }
 
     .controls{
       display:flex;
       flex-wrap:wrap;
-      gap: 10px;
+      gap:10px;
       align-items:center;
-      margin-top: 10px;
+      margin-top:10px;
     }
     .pill{
       display:flex;
       gap:8px;
       align-items:center;
-      padding: 8px 10px;
-      border: 1px solid var(--border);
-      border-radius: 999px;
-      background: #fff;
-      font-size: 13px;
-      color:#0f172a;
+      padding:8px 10px;
+      border:1px solid var(--border);
+      border-radius:999px;
+      background:#fff;
+      font-size:13px;
     }
-    .pill input{ transform: translateY(1px); }
-
+    .pill input{transform:translateY(1px)}
     button{
       appearance:none;
-      border: 1px solid var(--border);
-      background: #fff;
-      padding: 10px 12px;
-      border-radius: 14px;
-      font-weight: 750;
+      border:1px solid var(--border);
+      background:#fff;
+      padding:9px 12px;
+      border-radius:12px;
+      font-weight:700;
       cursor:pointer;
-      font-size: 13px;
-      color:#0f172a;
-    }
-    button.primary{
-      border-color: rgba(56,189,248,.55);
-      box-shadow: 0 0 0 3px rgba(56,189,248,.16);
+      font-size:13px;
     }
     button:hover{
-      border-color: rgba(56,189,248,.8);
-      box-shadow: 0 0 0 3px rgba(56,189,248,.18);
+      border-color:rgba(56,189,248,.75);
+      box-shadow:0 0 0 3px rgba(56,189,248,.18);
     }
-
-    .row{
-      display:flex;
-      gap:10px;
-      flex-wrap:wrap;
+    .small{
+      font-size:12px;
+      color:var(--muted);
       margin-top:10px;
+      line-height:1.35;
     }
-    .row > *{ flex: 1 1 160px; }
-
-    .note{
-      margin-top:10px;
-      font-size: 12px;
-      color: var(--muted);
-      line-height: 1.35;
-    }
-
-    .status{
-      margin-top:10px;
-      padding:10px 12px;
-      border-radius: 14px;
-      border: 1px solid var(--border);
-      background:#f8fafc;
-      font-size: 12px;
-      color:#0f172a;
-      display:flex;
-      justify-content:space-between;
-      gap:10px;
-      flex-wrap:wrap;
-    }
-    .badge{
-      font-weight:800;
-      padding:4px 10px;
-      border-radius:999px;
-      color:#fff;
-      font-size: 12px;
-      line-height: 1.6;
-      align-self:flex-start;
-    }
-    .ok{ background: var(--good); }
-    .warn{ background: #f59e0b; }
-    .bad{ background: var(--bad); }
-
-    details{
-      margin-top: 10px;
-      border-top: 1px solid rgba(15,23,42,0.08);
-      padding-top: 8px;
-    }
-    summary{
-      cursor:pointer;
-      user-select:none;
-      display:inline-flex;
-      align-items:center;
-      gap:8px;
-      font-size: 12px;
-      color: var(--muted);
-      padding: 6px 10px;
-      border-radius: 999px;
-      border: 1px solid var(--border);
-      background: #fff;
-    }
-    summary::-webkit-details-marker{ display:none; }
-
     .mapbox{
       margin-top:10px;
-      padding: 10px;
-      border-radius: 14px;
-      background: #f8fafc;
-      border: 1px dashed rgba(15,23,42,0.22);
+      padding:10px;
+      border-radius:12px;
+      background:#f8fafc;
+      border:1px dashed rgba(15,23,42,.2);
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-      font-size: 12px;
+      font-size:12px;
       color:#0f172a;
       overflow:auto;
-      white-space: pre;
-      max-height: 240px;
+      white-space:pre-wrap;
     }
   </style>
 </head>
@@ -205,307 +110,221 @@
 <body>
   <div class="wrap">
     <header>
-      <h1>Two-Digit Cipher</h1>
-      <p>Each letter → a fixed 2-digit code. <b>00</b> is the word break. Mobile-friendly, copy-friendly, no nonsense.</p>
+      <h1>Pig Latin + “an” / Vowel + “a” Translator</h1>
+      <p>
+        Words starting with a consonant use Pig Latin (clusters too) + <b>an</b>.
+        Words starting with a vowel just add <b>a</b>. Punctuation preserved.
+      </p>
     </header>
 
     <div class="grid">
-      <!-- ENCODER -->
       <div class="card">
-        <label for="plain">Encoder (English → numbers)</label>
-        <textarea id="plain" placeholder="Type: The car is white"></textarea>
+        <label for="input">English input</label>
+        <textarea id="input" placeholder="Type here... e.g. The car is white and parked at my house."></textarea>
 
         <div class="controls">
           <div class="pill">
-            <input type="checkbox" id="groupBy2" checked>
-            <label for="groupBy2" style="margin:0;color:inherit;">Group output (spaces every 2 digits)</label>
+            <input type="checkbox" id="preserveCaps" checked>
+            <label for="preserveCaps" style="margin:0;color:inherit;">Preserve capitalization</label>
           </div>
 
-          <div class="pill">
-            <input type="checkbox" id="keepSpacesReadable">
-            <label for="keepSpacesReadable" style="margin:0;color:inherit;">Show word breaks as 00 (with spaces)</label>
-          </div>
-
-          <button class="primary" id="copyCipher" type="button">Copy cipher</button>
-          <button id="clearPlain" type="button">Clear</button>
+          <button id="copyBtn" type="button">Copy output</button>
+          <button id="clearBtn" type="button">Clear</button>
         </div>
 
-        <div class="note">
-          Encoder keeps letters A–Z and spaces. Everything else (punctuation, emojis) is dropped so the output stays “digits-only.”
-        </div>
-
-        <label for="cipherOut" style="margin-top:10px;">Cipher output</label>
-        <textarea id="cipherOut" readonly placeholder="Output appears here..."></textarea>
-
-        <div class="status" id="encStatus">
-          <span id="encMsg">Ready.</span>
-          <span class="badge ok" id="encBadge">OK</span>
+        <div class="small">
+          Examples: <b>the → ethan</b>, <b>car → arcan</b>, <b>is → isa</b>, <b>apple → applea</b>, <b>street → eetstran</b>.
         </div>
       </div>
 
-      <!-- DECODER -->
       <div class="card">
-        <label for="cipherIn">Decoder (numbers → English)</label>
-        <textarea id="cipherIn" placeholder="Paste digits here… (spaces/newlines ok). 00 = word break."></textarea>
+        <label for="output">Translated output</label>
+        <textarea id="output" readonly placeholder="Output appears here..."></textarea>
 
-        <div class="controls">
-          <div class="pill">
-            <input type="checkbox" id="showUnknownAsBrackets" checked>
-            <label for="showUnknownAsBrackets" style="margin:0;color:inherit;">Unknown codes as [xx]</label>
-          </div>
-
-          <button class="primary" id="copyPlain" type="button">Copy plain</button>
-          <button id="clearCipher" type="button">Clear</button>
-        </div>
-
-        <label for="plainOut" style="margin-top:10px;">Plain output</label>
-        <textarea id="plainOut" readonly placeholder="Decoded text appears here..."></textarea>
-
-        <div class="status" id="decStatus">
-          <span id="decMsg">Ready.</span>
-          <span class="badge ok" id="decBadge">OK</span>
-        </div>
-
-        <details>
-          <summary>Show mapping</summary>
-          <div class="mapbox" id="mapbox"></div>
-        </details>
+        <div class="mapbox" id="rulesBox"></div>
       </div>
     </div>
   </div>
 
   <script>
-    // ====== YOUR CURRENT LOCKED MAP ======
-    const ENC = Object.freeze({
-      A:"07", B:"05", C:"11", D:"02", E:"12", F:"04", G:"09", H:"13", I:"06",
-      J:"14", K:"10", L:"08", M:"16", N:"20", O:"24", P:"17", Q:"18", R:"15",
-      S:"01", T:"03", U:"21", V:"19", W:"23", X:"25", Y:"26", Z:"22"
-    });
+    // ===== Core rules =====
+    // - Vowel-start word: append "a"
+    // - Consonant-start word: move initial consonant cluster to end, append "an"
+    // Preserves punctuation/spaces.
+    // Allows internal apostrophes/hyphens within a word (e.g., don't, mother-in-law)
 
-    const DEC = Object.freeze(Object.fromEntries(Object.entries(ENC).map(([k,v]) => [v,k])));
-    const WORD_BREAK = "00";
+    const VOWELS = new Set(["a","e","i","o","u"]);
 
-    const plainEl = document.getElementById("plain");
-    const cipherOutEl = document.getElementById("cipherOut");
-    const cipherInEl = document.getElementById("cipherIn");
-    const plainOutEl = document.getElementById("plainOut");
+    // Common English consonant clusters; longest-first matters.
+    // This is not "perfect phonetics" for every accent, but it's clean + works well.
+    const CLUSTERS = [
+      // 3+ letters
+      "squ","sch","scr","shr","spl","spr","str","thr",
+      // 2 letters
+      "bl","br","ch","cl","cr","dr","fl","fr","gl","gr","ph","pl","pr","sc","sh","sk","sl","sm","sn","sp","st","sw","th","tr","tw","wh","wr"
+    ];
 
-    const groupBy2El = document.getElementById("groupBy2");
-    const keepSpacesReadableEl = document.getElementById("keepSpacesReadable");
-    const showUnknownAsBracketsEl = document.getElementById("showUnknownAsBrackets");
+    const inputEl = document.getElementById("input");
+    const outputEl = document.getElementById("output");
+    const preserveCapsEl = document.getElementById("preserveCaps");
+    const copyBtn = document.getElementById("copyBtn");
+    const clearBtn = document.getElementById("clearBtn");
+    const rulesBox = document.getElementById("rulesBox");
 
-    const copyCipherBtn = document.getElementById("copyCipher");
-    const copyPlainBtn = document.getElementById("copyPlain");
-    const clearPlainBtn = document.getElementById("clearPlain");
-    const clearCipherBtn = document.getElementById("clearCipher");
-
-    const encMsg = document.getElementById("encMsg");
-    const encBadge = document.getElementById("encBadge");
-    const decMsg = document.getElementById("decMsg");
-    const decBadge = document.getElementById("decBadge");
-
-    const mapbox = document.getElementById("mapbox");
-
-    function setStatus(which, level, msg){
-      const badge = which === "enc" ? encBadge : decBadge;
-      const text  = which === "enc" ? encMsg   : decMsg;
-
-      text.textContent = msg;
-
-      badge.classList.remove("ok","warn","bad");
-      if (level === "ok") badge.classList.add("ok");
-      if (level === "warn") badge.classList.add("warn");
-      if (level === "bad") badge.classList.add("bad");
-
-      badge.textContent = level.toUpperCase();
+    function isLetter(ch){
+      return /^[A-Za-z]$/.test(ch);
     }
 
-    function normalizePlain(s){
-      // keep A-Z and spaces only (digits-only cipher output)
-      // convert everything else to "" (dropped)
-      return (s || "")
-        .toUpperCase()
-        .replace(/[^A-Z ]+/g, "")   // drop punctuation etc
-        .replace(/\s+/g, " ")       // collapse whitespace
-        .trim();
+    function isWordJoiner(ch){
+      return ch === "'" || ch === "-";
     }
 
-    function encode(plain){
-      const clean = normalizePlain(plain);
-
-      if (!clean){
-        return { out: "", note: "Type something (letters and spaces).", level: "warn" };
-      }
-
-      const tokens = [];
-      for (const ch of clean){
-        if (ch === " "){
-          tokens.push(WORD_BREAK);
-        } else {
-          tokens.push(ENC[ch] ?? "??");
-        }
-      }
-
-      // If user wants "00" visible as word breaks (with spaces), we keep it separated nicely.
-      // Otherwise we just concatenate.
-      let outRaw = tokens.join("");
-
-      // Format output
-      const group = groupBy2El.checked;
-
-      if (keepSpacesReadableEl.checked){
-        // show word breaks as " 00 " and group digits in pairs everywhere else
-        // We'll rebuild as an array of pieces, where "00" becomes its own piece.
-        const pieces = [];
-        for (const tok of tokens){
-          pieces.push(tok);
-        }
-
-        if (group){
-          // put spaces between every 2 digits, but keep 00 intact (it already is)
-          // easiest: join pieces then re-split with special handling around 00
-          // We'll instead format each piece: if it's 00 keep, else it's 2-digit already.
-          outRaw = pieces.join(" ");
-        } else {
-          outRaw = pieces.join("");
-        }
-
-        return {
-          out: outRaw,
-          note: `Encoded ${clean.length} chars. Word breaks = 00.`,
-          level: "ok"
-        };
-      }
-
-      if (group){
-        // spaces every 2 digits
-        outRaw = outRaw.replace(/(\d{2})/g, "$1 ").trim();
-      }
-
+    function getCaseStyle(word){
       return {
-        out: outRaw,
-        note: `Encoded ${clean.length} chars. (00 used internally for spaces.)`,
-        level: "ok"
+        isAllCaps: word.length > 1 && word === word.toUpperCase(),
+        isTitle: /^[A-Z][a-z]+$/.test(word),
       };
     }
 
-    function normalizeCipher(s){
-      // allow spaces/newlines/pipes/dots etc; keep digits only
-      return (s || "").replace(/\D+/g, "");
+    function applyCaseStyle(out, style){
+      if (style.isAllCaps) return out.toUpperCase();
+      if (style.isTitle) return out.charAt(0).toUpperCase() + out.slice(1);
+      return out;
     }
 
-    function decode(cipherText){
-      const digits = normalizeCipher(cipherText);
-
-      if (!digits){
-        return { out: "", note: "Paste digits to decode. (Non-digits are ignored.)", level: "warn" };
+    function initialCluster(lowerWord){
+      // Find the initial consonant cluster (letters only) using our cluster list.
+      for (const c of CLUSTERS){
+        if (lowerWord.startsWith(c)) return c;
       }
-      if (digits.length % 2 !== 0){
-        return { out: "", note: `Odd number of digits (${digits.length}). Need pairs like 03 12 01…`, level: "bad" };
-      }
+      // Otherwise, the first letter is the cluster (if it’s not a vowel)
+      return lowerWord[0];
+    }
 
+    function translateWord(word, keepCaps){
+      const style = keepCaps ? getCaseStyle(word) : {isAllCaps:false,isTitle:false};
+
+      // We'll do the transform on lowercase, then re-apply capitalization style.
+      // Keep inner joiners (apostrophes/hyphens) by translating segments around them.
       const parts = [];
-      let unknownCount = 0;
+      let buf = "";
 
-      for (let i = 0; i < digits.length; i += 2){
-        const code = digits.slice(i, i + 2);
+      const flushBuf = () => {
+        if (!buf) return;
+        parts.push(translateSimpleAlpha(buf));
+        buf = "";
+      };
 
-        if (code === WORD_BREAK){
-          parts.push(" ");
+      for (let i = 0; i < word.length; i++){
+        const ch = word[i];
+        if (isLetter(ch)){
+          buf += ch;
+        } else if (isWordJoiner(ch) && buf && (i+1 < word.length) && isLetter(word[i+1])){
+          // keep joiner inside the word (e.g., don't, mother-in-law)
+          flushBuf();
+          parts.push(ch);
+        } else {
+          // unexpected internal char; treat it as boundary
+          flushBuf();
+          parts.push(ch);
+        }
+      }
+      flushBuf();
+
+      const out = parts.join("");
+      return keepCaps ? applyCaseStyle(out, style) : out;
+    }
+
+    function translateSimpleAlpha(alphaWord){
+      const w = alphaWord.toLowerCase();
+      if (!w.length) return w;
+
+      // vowel-start
+      if (VOWELS.has(w[0])){
+        return w + "a";
+      }
+
+      // consonant-start => Pig Latin + "an"
+      const cl = initialCluster(w);
+      return w.slice(cl.length) + cl + "an";
+    }
+
+    function translateText(text, keepCaps){
+      let i = 0;
+      let out = "";
+
+      while (i < text.length){
+        const ch = text[i];
+
+        // Start of a word (letter)
+        if (isLetter(ch)){
+          let j = i;
+
+          // Word token: letters with optional internal ' or -
+          while (j < text.length){
+            const cj = text[j];
+            if (isLetter(cj)) { j++; continue; }
+            if (isWordJoiner(cj) && j+1 < text.length && isLetter(text[j+1])) { j++; continue; }
+            break;
+          }
+
+          const word = text.slice(i, j);
+          out += translateWord(word, keepCaps);
+          i = j;
           continue;
         }
 
-        const letter = DEC[code];
-        if (letter){
-          parts.push(letter);
-        } else {
-          unknownCount++;
-          parts.push(showUnknownAsBracketsEl.checked ? `[${code}]` : "?");
-        }
+        // Non-word char (space/punct) passes through
+        out += ch;
+        i++;
       }
 
-      const out = parts.join("").replace(/\s+/g, " ").trim();
-
-      if (unknownCount > 0){
-        return {
-          out,
-          note: `Decoded with ${unknownCount} unknown code(s).`,
-          level: "warn"
-        };
-      }
-
-      return { out, note: "Decoded cleanly.", level: "ok" };
+      return out;
     }
 
-    function renderMap(){
-      const lines = [];
-      lines.push("WORD BREAK: 00");
-      lines.push("");
-      lines.push("LETTER → CODE");
-      const entries = Object.entries(ENC).sort((a,b)=>a[0].localeCompare(b[0]));
-      for (const [L,code] of entries){
-        lines.push(`${L} → ${code}`);
-      }
-      mapbox.textContent = lines.join("\n");
+    function update(){
+      outputEl.value = translateText(inputEl.value, preserveCapsEl.checked);
     }
 
-    function updateAll(){
-      // encode
-      const enc = encode(plainEl.value);
-      cipherOutEl.value = enc.out;
-      setStatus("enc", enc.level, enc.note);
+    function renderRules(){
+      rulesBox.textContent =
+`RULES
+1) Vowel-start words: add "a"
+   is → isa
+   apple → applea
 
-      // decode
-      const dec = decode(cipherInEl.value);
-      plainOutEl.value = dec.out;
-      setStatus("dec", dec.level, dec.note);
+2) Consonant-start words: Pig Latin + "an" (clusters too)
+   the → ethan (th)
+   car → arcan (c)
+   street → eetstran (str)
+
+NOTES
+- Punctuation preserved.
+- Apostrophes/hyphens inside words are kept (don't, mother-in-law).
+- Cluster list is tweakable in CLUSTERS[].`;
     }
 
-    // Events
-    plainEl.addEventListener("input", updateAll);
-    cipherInEl.addEventListener("input", updateAll);
+    inputEl.addEventListener("input", update);
+    preserveCapsEl.addEventListener("change", update);
 
-    groupBy2El.addEventListener("change", updateAll);
-    keepSpacesReadableEl.addEventListener("change", updateAll);
-    showUnknownAsBracketsEl.addEventListener("change", updateAll);
-
-    clearPlainBtn.addEventListener("click", () => {
-      plainEl.value = "";
-      cipherOutEl.value = "";
-      updateAll();
-      plainEl.focus();
-    });
-
-    clearCipherBtn.addEventListener("click", () => {
-      cipherInEl.value = "";
-      plainOutEl.value = "";
-      updateAll();
-      cipherInEl.focus();
-    });
-
-    copyCipherBtn.addEventListener("click", async () => {
+    copyBtn.addEventListener("click", async () => {
       try{
-        await navigator.clipboard.writeText(cipherOutEl.value);
-        copyCipherBtn.textContent = "Copied!";
-        setTimeout(()=>copyCipherBtn.textContent="Copy cipher", 900);
+        await navigator.clipboard.writeText(outputEl.value);
+        copyBtn.textContent = "Copied!";
+        setTimeout(()=>copyBtn.textContent="Copy output", 900);
       } catch(e){
         alert("Copy failed (clipboard permission). You can manually select + copy.");
       }
     });
 
-    copyPlainBtn.addEventListener("click", async () => {
-      try{
-        await navigator.clipboard.writeText(plainOutEl.value);
-        copyPlainBtn.textContent = "Copied!";
-        setTimeout(()=>copyPlainBtn.textContent="Copy plain", 900);
-      } catch(e){
-        alert("Copy failed (clipboard permission). You can manually select + copy.");
-      }
+    clearBtn.addEventListener("click", () => {
+      inputEl.value = "";
+      outputEl.value = "";
+      inputEl.focus();
     });
 
-    // Init
-    renderMap();
-    updateAll();
+    renderRules();
+    update();
   </script>
 </body>
 </html>
