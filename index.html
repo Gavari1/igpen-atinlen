@@ -22,6 +22,8 @@
       --sans: system-ui, -apple-system, Segoe UI, sans-serif;
     }
 
+    *{ box-sizing:border-box; }
+
     body{
       margin:0;
       background: linear-gradient(180deg, #7f8892, var(--bg));
@@ -43,6 +45,7 @@
         0 18px 40px rgba(0,0,0,0.35),
         inset 0 2px 0 rgba(255,255,255,0.6);
       padding:16px;
+      overflow:hidden; /* just in case anything tries to escape */
     }
 
     .topbar{
@@ -51,6 +54,7 @@
       justify-content:space-between;
       gap:12px;
       padding:8px 10px 14px;
+      flex-wrap:wrap; /* mobile-safe */
     }
 
     .brand{
@@ -62,6 +66,7 @@
       display:flex;
       align-items:center;
       gap:10px;
+      white-space:nowrap;
     }
     .brand .dot{
       width:10px;height:10px;border-radius:50%;
@@ -91,19 +96,24 @@
       padding:10px;
       color: var(--text);
       font-family: var(--mono);
+      max-width:100%;
+      overflow:hidden;
     }
 
-    .screen .row{
+    .row{
       display:flex;
       gap:10px;
-      align-items:center;
+      align-items:flex-start;
       justify-content:space-between;
       margin-bottom:10px;
+      flex-wrap:wrap; /* critical for small screens */
     }
 
     .label{
       font-size:12px;
       opacity:0.85;
+      flex: 1 1 auto;
+      min-width: 220px;
     }
 
     .toggle{
@@ -112,6 +122,8 @@
       gap:8px;
       font-size:12px;
       user-select:none;
+      flex: 0 0 auto;
+      white-space:nowrap;
     }
     .toggle input{
       accent-color: #2b6;
@@ -120,7 +132,10 @@
 
     textarea{
       width:100%;
-      min-height:110px;
+      max-width:100%;
+      min-width:0;          /* critical inside grid/flex */
+      display:block;
+      min-height:120px;
       resize:vertical;
       border-radius: 6px;
       border: 1px solid rgba(0,0,0,0.45);
@@ -131,13 +146,23 @@
       padding:10px;
       outline:none;
       box-shadow: inset 0 1px 0 rgba(255,255,255,0.35);
+      overflow-wrap:anywhere; /* no horizontal spill */
+      word-break:break-word;
     }
 
     .split{
       display:grid;
       grid-template-columns: 1fr;
       gap:10px;
+      width:100%;
+      margin:0 auto;        /* centered */
+      max-width:100%;
     }
+    .split > div{
+      min-width:0;          /* critical: lets boxes shrink instead of overflowing */
+      max-width:100%;
+    }
+
     @media (min-width: 820px){
       .split{ grid-template-columns: 1fr 1fr; }
       textarea{ min-height: 180px; }
@@ -198,7 +223,7 @@
       font-size:12px;
       opacity:0.9;
       display:flex;
-      gap:16px;
+      gap:10px;
       flex-wrap:wrap;
       align-items:center;
       justify-content:flex-end;
@@ -209,6 +234,7 @@
       background: rgba(255,255,255,0.35);
       padding:6px 10px;
       border-radius:999px;
+      white-space:nowrap;
     }
 
     .foot{
@@ -221,7 +247,6 @@
       gap:10px;
       flex-wrap:wrap;
     }
-
     .foot code{ font-family: var(--mono); }
   </style>
 </head>
@@ -239,7 +264,7 @@
       <div class="screen">
         <div class="row">
           <div class="label">INPUT (Type English. We delete vowels. Deal with it.)</div>
-          <label class="toggle" title="If ON, keeps Y/y as a consonant. If OFF, replaces Y/y too.">
+          <label class="toggle" title="If ON, keeps Y/y. If OFF, deletes Y/y too.">
             <input id="keepY" type="checkbox" checked />
             Keep Y/y
           </label>
@@ -250,7 +275,7 @@
             <textarea id="inText" placeholder="Type here...">The car is broken and old. It's broken down in the driveway.</textarea>
           </div>
           <div>
-            <div class="label" style="margin:0 0 6px;">OUTPUT (Vowels → ~)</div>
+            <div class="label" style="margin:0 0 6px;">OUTPUT (Vowels deleted)</div>
             <textarea id="outText" readonly placeholder="Output appears here..."></textarea>
           </div>
         </div>
@@ -272,8 +297,8 @@
     </div>
 
     <div class="foot">
-      <div>Rule: replace <code>AEIOU</code> (and <code>Y</code> if unchecked) with <code>~</code>.</div>
-      <div>Tip: try it with no spaces for maximum chaos.</div>
+      <div>Rule: delete <code>AEIOU</code> (and <code>Y</code> if unchecked).</div>
+      <div>Tip: try no spaces for maximum chaos.</div>
     </div>
   </div>
 
@@ -294,8 +319,10 @@
       const src = inText.value ?? "";
       const vowels = keepY.checked ? /[AEIOUaeiou]/g : /[AEIOUYaeiouy]/g;
 
-      let nuked = 0;
-      const out = src.replace(vowels, () => { nuked++; return "~"; });
+      const matches = src.match(vowels);
+      const nuked = matches ? matches.length : 0;
+
+      const out = src.replace(vowels, ""); // DELETE vowels (no ~)
 
       outText.value = out;
 
@@ -313,7 +340,6 @@
         btnCopy.textContent = "COPIED!";
         setTimeout(() => (btnCopy.textContent = "COPY OUTPUT"), 900);
       } catch (e) {
-        // Fallback for older / locked-down browsers
         outText.focus();
         outText.select();
         document.execCommand('copy');
@@ -329,7 +355,6 @@
       inText.focus();
     }
 
-    // Live update like a cheap translator that can't wait to be helpful
     inText.addEventListener('input', translateNow);
     keepY.addEventListener('change', translateNow);
 
@@ -337,7 +362,6 @@
     btnCopy.addEventListener('click', copyOutput);
     btnClear.addEventListener('click', clearAll);
 
-    // Boot
     translateNow();
   </script>
 </body>
