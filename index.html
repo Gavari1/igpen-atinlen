@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>-eg Translator (Vowel-Rotate Only)</title>
+  <title>en/eg Translator (Clusters + Vowel-Rotate)</title>
   <style>
     :root{
       --bg:#0b132b; --card:#ffffff; --text:#0f172a; --muted:#64748b;
@@ -61,17 +61,17 @@
 <body>
   <div class="wrap">
     <header>
-      <h1>-eg Translator</h1>
+      <h1>en/eg Translator</h1>
       <p>
-        <b>Only</b> words that start with a vowel (A/E/I/O/U/Y) change:
-        last letter → front + <b>eg</b>. Consonant-start words stay exactly the same.
+        Consonant-start → Pig Latin (consonant cluster) + <b>en</b>. <br/>
+        Vowel-start (A/E/I/O/U/Y) → last letter to front + <b>eg</b>.
       </p>
     </header>
 
     <div class="grid">
       <div class="card">
         <label for="input">Input</label>
-        <textarea id="input" placeholder="Type here... e.g. I am always at home on Friday."></textarea>
+        <textarea id="input" placeholder="Type here... e.g. I am at the house and tired"></textarea>
 
         <div class="controls">
           <div class="pill">
@@ -85,12 +85,11 @@
         <div class="small">
           Examples:
           <code>open → nopeeg</code>,
-          <code>always → salwayeg</code>,
-          <code>either → reitheeg</code>,
           <code>and → daneg</code>,
-          <code>a → aeg</code>,
-          <code>an → naeg</code>,
-          <code>you → uoyeg</code>
+          <code>I → Ieg</code>,
+          <code>you → uoyeg</code>,
+          <code>Friday → idayFren</code>,
+          <code>street → eetstren</code>
         </div>
       </div>
 
@@ -98,8 +97,7 @@
         <label for="output">Output</label>
         <textarea id="output" readonly placeholder="Output appears here..."></textarea>
         <div class="small">
-          Rule: vowel-start (AEIOUY) length ≥ 1 → rotate-last-to-front + <code>eg</code>.
-          Consonant-start words pass through unchanged.
+          Rules: vowel-start → rotate + <code>eg</code>. consonant-start → move initial consonant cluster + <code>en</code>.
         </div>
       </div>
     </div>
@@ -118,44 +116,72 @@
       return VOWELS.has(ch.toLowerCase());
     }
 
-    function preserveCase(originalWord, transformedLower){
-      const isAllCaps = originalWord === originalWord.toUpperCase();
-      const isTitle =
-        originalWord[0] === originalWord[0].toUpperCase() &&
-        originalWord.slice(1) === originalWord.slice(1).toLowerCase();
-
-      if (isAllCaps) return transformedLower.toUpperCase();
-      if (isTitle) return transformedLower[0].toUpperCase() + transformedLower.slice(1).toLowerCase();
-      return transformedLower;
-    }
-
-    // Extract leading punctuation, word, trailing punctuation
+    // Split token into leading punctuation, word, trailing punctuation
     function splitToken(token){
       const m = token.match(/^([^A-Za-z]*)([A-Za-z]+)([^A-Za-z]*)$/);
       if (!m) return null;
       return { lead: m[1], word: m[2], trail: m[3] };
     }
 
+    // Consonant-start: move initial consonant cluster to end + "en"
+    function consonantClusterTransform(word){
+      const lower = word.toLowerCase();
+
+      // index of first vowel; everything before it is the cluster
+      let idx = 0;
+      while (idx < lower.length && !isVowel(lower[idx])) idx++;
+
+      const cluster = lower.slice(0, idx);
+      const rest = lower.slice(idx);
+
+      // If no vowel exists, keep the word but still add "en" (optional; change if you want)
+      const core = (idx === lower.length) ? lower : (rest + cluster);
+
+      // Case handling:
+      // - ALLCAPS => whole result uppercase
+      // - Titlecase => keep first letter caps, rest lower
+      const isAllCaps = word === word.toUpperCase();
+      const isTitle =
+        word[0] === word[0].toUpperCase() &&
+        word.slice(1) === word.slice(1).toLowerCase();
+
+      const outLower = core + "en";
+
+      if (isAllCaps) return outLower.toUpperCase();
+      if (isTitle) return outLower[0].toUpperCase() + outLower.slice(1);
+      return outLower;
+    }
+
     // Vowel-start: last letter to front + "eg"
-    // Special-cases naturally fall out:
-    // "a" -> "aeg", "I" -> "Ieg", "an" -> "naeg"
+    // IMPORTANT: do NOT capitalize "EG" for all-caps words; keep suffix "eg" as-is.
     function vowelStartTransform(word){
       const lower = word.toLowerCase();
-      const rotated = lower.length === 1
+
+      const rotated = (lower.length === 1)
         ? lower
         : (lower[lower.length - 1] + lower.slice(0, -1));
-      const transformed = rotated + "eg";
-      return preserveCase(word, transformed);
+
+      const withSuffix = rotated + "eg";
+
+      // Preserve ONLY the original first-letter style, but NEVER all-caps the whole output.
+      const isTitle =
+        word[0] === word[0].toUpperCase() &&
+        word.slice(1) === word.slice(1).toLowerCase();
+
+      if (isTitle) return withSuffix[0].toUpperCase() + withSuffix.slice(1); // "Open" -> "Nopeeg"
+      if (word[0] === word[0].toUpperCase()) {
+        // For things like "I" or "USA": only keep the first letter cap, not whole word
+        return withSuffix[0].toUpperCase() + withSuffix.slice(1);
+      }
+      return withSuffix;
     }
 
     function transformWord(word){
-      // Consonant-start words are left alone, per your request.
-      if (!isVowel(word[0])) return word;
-      return vowelStartTransform(word);
+      if (isVowel(word[0])) return vowelStartTransform(word);
+      return consonantClusterTransform(word);
     }
 
     function translateText(text){
-      // Preserve exact whitespace by splitting into whitespace tokens + non-whitespace tokens
       const tokens = text.match(/\s+|[^\s]+/g) || [];
 
       return tokens.map(tok => {
@@ -165,8 +191,7 @@
         if (!parts) return tok;
 
         const { lead, word, trail } = parts;
-        const outWord = transformWord(word);
-        return lead + outWord + trail;
+        return lead + transformWord(word) + trail;
       }).join("");
     }
 
