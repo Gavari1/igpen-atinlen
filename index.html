@@ -88,14 +88,14 @@
     <header>
       <h1>Nordic Drift Translator</h1>
       <p>
-        Applies a controlled phonetic drift to English text (case-preserving, punctuation-safe).
+        Applies a controlled drift to English text (case-preserving, punctuation-safe).
       </p>
     </header>
 
     <div class="grid">
       <div class="card">
         <label for="input">Input</label>
-        <textarea id="input" placeholder="Type here... e.g. I am driving to the store with my son."></textarea>
+        <textarea id="input" placeholder="Type here... e.g. Hail Mary full of grace."></textarea>
 
         <div class="controls">
           <div class="pill">
@@ -108,13 +108,11 @@
 
         <div class="small">
           Rules:
-          <code>W→V</code>,
-          <code>TH→þ</code>,
-          <code>A↔O</code>,
-          <code>Y↔U</code>,
-          <code>No word ends in i</code>,
-          <code>outside → aytsed</code>,
-          <code>H removed between nouns</code>
+          <code>custom overrides (your dictionary)</code>,
+          <code>outside→aytsed</code>,
+          <code>delete E after D (de→d)</code>
+          <br/>
+          Example: <code>ride</code> → <code>rid</code> · <code>made</code> → <code>mad</code> · <code>grace</code> → <code>groce</code> (if you add it)
         </div>
       </div>
 
@@ -122,7 +120,7 @@
         <label for="output">Output</label>
         <textarea id="output" readonly placeholder="Output appears here..."></textarea>
         <div class="small">
-          Note: “H removed between nouns” uses a lightweight heuristic and only removes a standalone <code>h</code> token.
+          Override words are matched case-insensitively, and output tries to preserve capitalization.
         </div>
       </div>
     </div>
@@ -135,163 +133,89 @@
     const copyBtn  = document.getElementById("copyBtn");
     const clearBtn = document.getElementById("clearBtn");
 
-    // --- Core mappings ---
-    // Vowel swaps: A↔O, Y↔U  (E↔I removed completely)
-    const VOWEL_SWAP = {
-      a: "o", o: "a",
-      y: "u", u: "y"
+    // ============================================================
+    // 1) CUSTOM OVERRIDES (EDIT THIS)
+    // ------------------------------------------------------------
+    // Add as many as you want:
+    //   "grace": "groce",
+    //   "thee":  "thii",
+    //   "mary":  "moru",
+    // ------------------------------------------------------------
+    // Keys are lowercase. Values are what you want output to be.
+    // These overrides run FIRST and ignore the other rules.
+    // ============================================================
+    const OVERRIDES = {
+      // examples you can keep or delete:
+      // "grace": "groce",
+      // "thee": "thii"
     };
 
-    // Special-case whole-word replacements (lowercase keys)
-    const WORD_EXCEPTIONS = {
-      "outside": "aytsed"
-    };
-
-    function preserveWordCase(originalWord, mappedLower){
-      const isAllCaps = originalWord === originalWord.toUpperCase();
-      const isTitle =
-        originalWord[0] === originalWord[0].toUpperCase() &&
-        originalWord.slice(1) === originalWord.slice(1).toLowerCase();
-
-      if (isAllCaps) return mappedLower.toUpperCase();
-      if (isTitle) return mappedLower[0].toUpperCase() + mappedLower.slice(1);
-      return mappedLower;
-    }
-
-    function preserveCase(originalChar, mappedChar){
-      if (originalChar === originalChar.toUpperCase()){
-        return mappedChar.toUpperCase();
-      }
-      return mappedChar;
-    }
+    // Helpers
+    function isLetter(ch){ return /[A-Za-z]/.test(ch); }
 
     function splitPreserveWhitespace(text){
       return text.match(/\s+|[^\s]+/g) || [];
     }
 
+    // Split a token into leading punctuation + core word + trailing punctuation
+    // e.g., `"grace,"` -> lead="" word="grace" trail=","
     function splitToken(token){
       const m = token.match(/^([^A-Za-z]*)([A-Za-z]+(?:'[A-Za-z]+)*)?([^A-Za-z]*)$/);
       if (!m || !m[2]) return null;
       return { lead: m[1], word: m[2], trail: m[3] };
     }
 
-    function looksLikeNoun(rawWord, prevRawWord){
-      const w = rawWord;
-      const lw = rawWord.toLowerCase();
-      const prev = (prevRawWord || "").toLowerCase();
+    // Apply a simple capitalization style:
+    // - ALL CAPS stays ALL CAPS
+    // - Title Case stays Title Case
+    // - otherwise lowercase
+    function applyCaseStyle(originalWord, mappedWord){
+      if (!mappedWord) return mappedWord;
 
-      const isCapitalized = w[0] === w[0].toUpperCase() && w.slice(1) !== w.slice(1).toUpperCase();
-      const commonNounEndings = /(s|es|ion|ions|ment|ments|ness|ship|ships|hood|hoods|er|ers|or|ors|ist|ists|ity|ities)$/.test(lw);
-      const likelyThingWord = /(house|car|store|road|bag|game|work|home|son|daughter|dog|coffee|church|traffic)$/.test(lw);
-      const precededByArticle = /^(a|an|the)$/.test(prev);
+      const isAllCaps = originalWord === originalWord.toUpperCase();
+      const isTitleCase =
+        originalWord[0] === originalWord[0].toUpperCase() &&
+        originalWord.slice(1) === originalWord.slice(1).toLowerCase();
 
-      return isCapitalized || commonNounEndings || likelyThingWord || precededByArticle;
+      if (isAllCaps) return mappedWord.toUpperCase();
+      if (isTitleCase) return mappedWord[0].toUpperCase() + mappedWord.slice(1).toLowerCase();
+      return mappedWord.toLowerCase();
     }
 
-    function removeHBetweenNouns(tokens){
-      const out = [];
-      for (let i = 0; i < tokens.length; i++){
-        const tok = tokens[i];
-
-        if (/^\s+$/.test(tok)){
-          out.push(tok);
-          continue;
-        }
-
-        const parts = splitToken(tok);
-        if (!parts){ out.push(tok); continue; }
-
-        const { lead, word, trail } = parts;
-        const isStandaloneH = lead === "" && trail === "" && (word === "h" || word === "H");
-
-        if (!isStandaloneH){
-          out.push(tok);
-          continue;
-        }
-
-        let j = out.length - 1;
-        while (j >= 0 && /^\s+$/.test(out[j])) j--;
-        if (j < 0){ out.push(tok); continue; }
-        const prevParts = splitToken(out[j]);
-        if (!prevParts){ out.push(tok); continue; }
-
-        let k = i + 1;
-        while (k < tokens.length && /^\s+$/.test(tokens[k])) k++;
-        if (k >= tokens.length){ out.push(tok); continue; }
-        const nextParts = splitToken(tokens[k]);
-        if (!nextParts){ out.push(tok); continue; }
-
-        const prevWord = prevParts.word;
-        const nextWord = nextParts.word;
-
-        const prevPrevWord = (() => {
-          let jj = j - 1;
-          while (jj >= 0 && /^\s+$/.test(out[jj])) jj--;
-          const pp = (jj >= 0) ? splitToken(out[jj]) : null;
-          return pp ? pp.word : "";
-        })();
-
-        const prevIsNoun = looksLikeNoun(prevWord, prevPrevWord);
-        const nextIsNoun = looksLikeNoun(nextWord, prevWord);
-
-        if (prevIsNoun && nextIsNoun){
-          continue; // drop the standalone h token
-        }
-
-        out.push(tok);
-      }
-      return out;
-    }
-
-    function applyNoTerminalI(word){
-      if (!word) return word;
-      const last = word[word.length - 1];
-      if (last === "i") return word.slice(0, -1) + "e";
-      if (last === "I") return word.slice(0, -1) + "E";
-      return word;
-    }
-
+    // --- Core word transform ---
+    // Priority:
+    //  1) OVERRIDES
+    //  2) outside -> aytsed
+    //  3) delete 'e' when it follows 'd'
     function driftWord(word){
-      const lowerWord = word.toLowerCase();
+      const lw = word.toLowerCase();
 
-      // Whole-word exceptions first (e.g. outside -> aytsed)
-      if (WORD_EXCEPTIONS[lowerWord]){
-        return preserveWordCase(word, WORD_EXCEPTIONS[lowerWord]);
+      // 1) User overrides
+      if (Object.prototype.hasOwnProperty.call(OVERRIDES, lw)){
+        return applyCaseStyle(word, OVERRIDES[lw]);
       }
 
-      // TH -> þ / Þ first (digraph)
-      let w = word.replace(/th/gi, (match) => {
-        const first = match[0];
-        return (first === first.toUpperCase()) ? "Þ" : "þ";
-      });
+      // 2) Hard override
+      if (lw === "outside"){
+        return applyCaseStyle(word, "aytsed");
+      }
 
-      // Char-level mapping: W->V + vowel swaps
+      // 3) Delete 'e' only when it follows 'd' (de -> d)
       let out = "";
-      for (const ch of w){
-        const low = ch.toLowerCase();
+      for (let i = 0; i < word.length; i++){
+        const ch = word[i];
+        const prev = word[i - 1];
 
-        if (low === "w"){
-          out += preserveCase(ch, "v");
+        if ((ch === "e" || ch === "E") && (prev === "d" || prev === "D")){
           continue;
         }
-
-        if (VOWEL_SWAP[low]){
-          out += preserveCase(ch, VOWEL_SWAP[low]);
-          continue;
-        }
-
         out += ch;
       }
-
-      // Enforce: no words end in i/I
-      out = applyNoTerminalI(out);
-
       return out;
     }
 
     function translateText(text){
-      let tokens = splitPreserveWhitespace(text);
-      tokens = removeHBetweenNouns(tokens);
+      const tokens = splitPreserveWhitespace(text);
 
       return tokens.map(tok => {
         if (/^\s+$/.test(tok)) return tok;
