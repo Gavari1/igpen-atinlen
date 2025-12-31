@@ -270,7 +270,7 @@
       w = w.replace(/th/gi, (match) => {
         // match could be "th", "Th", "tH", "TH"
         const first = match[0];
-        return (first === first.toUpperCase()) ? "D" : "d";
+        return (first === first.toUpperCase()) ? "Þ" : "þ";
       });
 
       // Now char-level mapping (W->V, vowels swap)
