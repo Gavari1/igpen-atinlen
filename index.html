@@ -87,15 +87,13 @@
   <div class="wrap">
     <header>
       <h1>Nordic Drift Translator</h1>
-      <p>
-        Applies a controlled drift to English text (case-preserving, punctuation-safe).
-      </p>
+      <p>Applies a controlled drift to English text (case-preserving, punctuation-safe).</p>
     </header>
 
     <div class="grid">
       <div class="card">
         <label for="input">Input</label>
-        <textarea id="input" placeholder="Type here... e.g. Hail Mary full of grace."></textarea>
+        <textarea id="input" placeholder="Type here... e.g. Thee Outside fore"></textarea>
 
         <div class="controls">
           <div class="pill">
@@ -108,20 +106,19 @@
 
         <div class="small">
           Rules:
-          <code>custom overrides (your dictionary)</code>,
+          <code>Overrides dictionary first</code>,
           <code>outside→aytsed</code>,
-          <code>delete E after D (de→d)</code>
+          <code>delete e after d</code>,
+          <code>E↔I everywhere</code>,
+          <code>if word ends in E and becomes ...i, drop final i</code>
           <br/>
-          Example: <code>ride</code> → <code>rid</code> · <code>made</code> → <code>mad</code> · <code>grace</code> → <code>groce</code> (if you add it)
+          Example: <code>Thee Outside fore</code> → <code>Thii Aytsed for</code>
         </div>
       </div>
 
       <div class="card">
         <label for="output">Output</label>
         <textarea id="output" readonly placeholder="Output appears here..."></textarea>
-        <div class="small">
-          Override words are matched case-insensitively, and output tries to preserve capitalization.
-        </div>
       </div>
     </div>
   </div>
@@ -134,41 +131,29 @@
     const clearBtn = document.getElementById("clearBtn");
 
     // ============================================================
-    // 1) CUSTOM OVERRIDES (EDIT THIS)
-    // ------------------------------------------------------------
-    // Add as many as you want:
-    //   "grace": "groce",
-    //   "thee":  "thii",
-    //   "mary":  "moru",
-    // ------------------------------------------------------------
-    // Keys are lowercase. Values are what you want output to be.
-    // These overrides run FIRST and ignore the other rules.
+    // CUSTOM OVERRIDES (EDIT THIS)
+    // Keys must be lowercase.
+    // These run FIRST and ignore all other rules.
     // ============================================================
     const OVERRIDES = {
-      // examples you can keep or delete:
       // "grace": "groce",
       // "thee": "thii"
     };
 
-    // Helpers
-    function isLetter(ch){ return /[A-Za-z]/.test(ch); }
+    const VOWEL_SWAP = {
+      e: "i", i: "e"
+    };
 
     function splitPreserveWhitespace(text){
       return text.match(/\s+|[^\s]+/g) || [];
     }
 
-    // Split a token into leading punctuation + core word + trailing punctuation
-    // e.g., `"grace,"` -> lead="" word="grace" trail=","
     function splitToken(token){
       const m = token.match(/^([^A-Za-z]*)([A-Za-z]+(?:'[A-Za-z]+)*)?([^A-Za-z]*)$/);
       if (!m || !m[2]) return null;
       return { lead: m[1], word: m[2], trail: m[3] };
     }
 
-    // Apply a simple capitalization style:
-    // - ALL CAPS stays ALL CAPS
-    // - Title Case stays Title Case
-    // - otherwise lowercase
     function applyCaseStyle(originalWord, mappedWord){
       if (!mappedWord) return mappedWord;
 
@@ -182,36 +167,73 @@
       return mappedWord.toLowerCase();
     }
 
-    // --- Core word transform ---
-    // Priority:
-    //  1) OVERRIDES
-    //  2) outside -> aytsed
-    //  3) delete 'e' when it follows 'd'
-    function driftWord(word){
-      const lw = word.toLowerCase();
+    function preserveCharCase(originalChar, mappedChar){
+      return (originalChar === originalChar.toUpperCase())
+        ? mappedChar.toUpperCase()
+        : mappedChar;
+    }
 
-      // 1) User overrides
-      if (Object.prototype.hasOwnProperty.call(OVERRIDES, lw)){
-        return applyCaseStyle(word, OVERRIDES[lw]);
-      }
-
-      // 2) Hard override
-      if (lw === "outside"){
-        return applyCaseStyle(word, "aytsed");
-      }
-
-      // 3) Delete 'e' only when it follows 'd' (de -> d)
+    function deleteEAfterD(word){
+      // delete 'e' when it immediately follows 'd' (de -> d)
       let out = "";
       for (let i = 0; i < word.length; i++){
         const ch = word[i];
         const prev = word[i - 1];
-
-        if ((ch === "e" || ch === "E") && (prev === "d" || prev === "D")){
-          continue;
-        }
+        if ((ch === "e" || ch === "E") && (prev === "d" || prev === "D")) continue;
         out += ch;
       }
       return out;
+    }
+
+    function swapEandI(word){
+      let out = "";
+      for (const ch of word){
+        const low = ch.toLowerCase();
+        if (VOWEL_SWAP[low]){
+          out += preserveCharCase(ch, VOWEL_SWAP[low]);
+        } else {
+          out += ch;
+        }
+      }
+      return out;
+    }
+
+    function dropFinalIIfCameFromFinalE(originalWord, transformedWord){
+      // If original ended with e/E AND transformed ends with i/I, drop that last i/I.
+      const origLast = originalWord[originalWord.length - 1];
+      const transLast = transformedWord[transformedWord.length - 1];
+      const origEndsE = (origLast === "e" || origLast === "E");
+      const transEndsI = (transLast === "i" || transLast === "I");
+
+      if (origEndsE && transEndsI){
+        return transformedWord.slice(0, -1);
+      }
+      return transformedWord;
+    }
+
+    function driftWord(word){
+      const lw = word.toLowerCase();
+
+      // 1) overrides
+      if (Object.prototype.hasOwnProperty.call(OVERRIDES, lw)){
+        return applyCaseStyle(word, OVERRIDES[lw]);
+      }
+
+      // 2) hard override
+      if (lw === "outside"){
+        return applyCaseStyle(word, "aytsed");
+      }
+
+      // 3) delete e after d
+      const afterDelete = deleteEAfterD(word);
+
+      // 4) E↔I everywhere
+      const swapped = swapEandI(afterDelete);
+
+      // 5) final rule: if original ended in E and would become ...I, drop last letter
+      const finalForm = dropFinalIIfCameFromFinalE(word, swapped);
+
+      return finalForm;
     }
 
     function translateText(text){
@@ -219,7 +241,6 @@
 
       return tokens.map(tok => {
         if (/^\s+$/.test(tok)) return tok;
-
         const parts = splitToken(tok);
         if (!parts) return tok;
 
