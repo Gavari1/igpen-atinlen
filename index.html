@@ -110,12 +110,11 @@
           Rules:
           <code>W→V</code>,
           <code>TH→þ</code>,
-          <code>I↔E</code>,
           <code>A↔O</code>,
           <code>Y↔U</code>,
+          <code>No word ends in i</code>,
+          <code>outside → aytsed</code>,
           <code>H removed between nouns</code>
-          <br/>
-          Example: <code>I am driving to the store with my son.</code> → <code>E om dreveng ta di stari ved mu san.</code>
         </div>
       </div>
 
@@ -123,8 +122,7 @@
         <label for="output">Output</label>
         <textarea id="output" readonly placeholder="Output appears here..."></textarea>
         <div class="small">
-          Note: “H removed between nouns” uses a lightweight heuristic (capitalized/proper nouns and common noun patterns).
-          You can tune it in the code if you want it stricter or looser.
+          Note: “H removed between nouns” uses a lightweight heuristic and only removes a standalone <code>h</code> token.
         </div>
       </div>
     </div>
@@ -138,43 +136,45 @@
     const clearBtn = document.getElementById("clearBtn");
 
     // --- Core mappings ---
-    // Vowel swaps: I↔E, A↔O, Y↔U
+    // Vowel swaps: A↔O, Y↔U  (E↔I removed completely)
     const VOWEL_SWAP = {
       a: "o", o: "a",
-      i: "e", e: "i",
       y: "u", u: "y"
     };
 
-    // Helpers
-    function isLetter(ch){ return /[A-Za-z]/.test(ch); }
+    // Special-case whole-word replacements (lowercase keys)
+    const WORD_EXCEPTIONS = {
+      "outside": "aytsed"
+    };
+
+    function preserveWordCase(originalWord, mappedLower){
+      const isAllCaps = originalWord === originalWord.toUpperCase();
+      const isTitle =
+        originalWord[0] === originalWord[0].toUpperCase() &&
+        originalWord.slice(1) === originalWord.slice(1).toLowerCase();
+
+      if (isAllCaps) return mappedLower.toUpperCase();
+      if (isTitle) return mappedLower[0].toUpperCase() + mappedLower.slice(1);
+      return mappedLower;
+    }
 
     function preserveCase(originalChar, mappedChar){
-      // mappedChar may be multi-letter in some future expansions; keep it simple here
       if (originalChar === originalChar.toUpperCase()){
         return mappedChar.toUpperCase();
       }
       return mappedChar;
     }
 
-    // Tokenize into whitespace vs non-whitespace, preserving exact spacing
     function splitPreserveWhitespace(text){
       return text.match(/\s+|[^\s]+/g) || [];
     }
 
-    // Split a token into leading punctuation + core word (letters/apostrophes) + trailing punctuation
-    // e.g., `"store,"` -> lead="" word="store" trail=","
     function splitToken(token){
       const m = token.match(/^([^A-Za-z]*)([A-Za-z]+(?:'[A-Za-z]+)*)?([^A-Za-z]*)$/);
       if (!m || !m[2]) return null;
       return { lead: m[1], word: m[2], trail: m[3] };
     }
 
-    // Very lightweight noun heuristic for the "H removed between nouns" rule.
-    // "noun" here means:
-    //  - capitalized word (likely proper noun), OR
-    //  - common noun-ish endings, OR
-    //  - preceded by an article (a/an/the after drift not applied yet), OR
-    //  - simple plural / common noun patterns
     function looksLikeNoun(rawWord, prevRawWord){
       const w = rawWord;
       const lw = rawWord.toLowerCase();
@@ -188,28 +188,16 @@
       return isCapitalized || commonNounEndings || likelyThingWord || precededByArticle;
     }
 
-    // Apply "H removed between nouns":
-    // if token sequence is [NOUN][H][NOUN] where H is a standalone "h"/"H" token between two words,
-    // remove that token.
-    //
-    // Because normal English writing rarely isolates "h" as its own word, this feature is mainly for
-    // texts where you *intentionally* insert H between nouns (e.g., "road h house").
-    //
-    // If you meant something different (like removing 'h' inside a compound like "roadhouse"),
-    // tell me and I’ll adjust the logic.
     function removeHBetweenNouns(tokens){
-      // tokens are original tokens (with punctuation)
       const out = [];
       for (let i = 0; i < tokens.length; i++){
         const tok = tokens[i];
 
-        // keep whitespace as-is
         if (/^\s+$/.test(tok)){
           out.push(tok);
           continue;
         }
 
-        // candidate standalone h token (maybe with punctuation)
         const parts = splitToken(tok);
         if (!parts){ out.push(tok); continue; }
 
@@ -221,26 +209,21 @@
           continue;
         }
 
-        // look backward for previous word
         let j = out.length - 1;
         while (j >= 0 && /^\s+$/.test(out[j])) j--;
         if (j < 0){ out.push(tok); continue; }
-
         const prevParts = splitToken(out[j]);
         if (!prevParts){ out.push(tok); continue; }
 
-        // look forward for next word
         let k = i + 1;
         while (k < tokens.length && /^\s+$/.test(tokens[k])) k++;
         if (k >= tokens.length){ out.push(tok); continue; }
-
         const nextParts = splitToken(tokens[k]);
         if (!nextParts){ out.push(tok); continue; }
 
         const prevWord = prevParts.word;
         const nextWord = nextParts.word;
 
-        // apply heuristic noun check
         const prevPrevWord = (() => {
           let jj = j - 1;
           while (jj >= 0 && /^\s+$/.test(out[jj])) jj--;
@@ -252,8 +235,7 @@
         const nextIsNoun = looksLikeNoun(nextWord, prevWord);
 
         if (prevIsNoun && nextIsNoun){
-          // drop the standalone 'h'
-          continue;
+          continue; // drop the standalone h token
         }
 
         out.push(tok);
@@ -261,50 +243,56 @@
       return out;
     }
 
-    // Apply TH->D, W->V, then vowel swaps. Preserve case per character.
-    function driftWord(word){
-      // Handle TH digraph first (case-insensitive) at word level so it doesn't split into t+h.
-      // Replace "th" or "TH" or "Th" etc with "d"/"D" depending on first char case.
-      let w = word;
+    function applyNoTerminalI(word){
+      if (!word) return word;
+      const last = word[word.length - 1];
+      if (last === "i") return word.slice(0, -1) + "e";
+      if (last === "I") return word.slice(0, -1) + "E";
+      return word;
+    }
 
-      w = w.replace(/th/gi, (match) => {
-        // match could be "th", "Th", "tH", "TH"
+    function driftWord(word){
+      const lowerWord = word.toLowerCase();
+
+      // Whole-word exceptions first (e.g. outside -> aytsed)
+      if (WORD_EXCEPTIONS[lowerWord]){
+        return preserveWordCase(word, WORD_EXCEPTIONS[lowerWord]);
+      }
+
+      // TH -> þ / Þ first (digraph)
+      let w = word.replace(/th/gi, (match) => {
         const first = match[0];
         return (first === first.toUpperCase()) ? "Þ" : "þ";
       });
 
-      // Now char-level mapping (W->V, vowels swap)
+      // Char-level mapping: W->V + vowel swaps
       let out = "";
       for (const ch of w){
         const low = ch.toLowerCase();
 
-        // W -> V
         if (low === "w"){
           out += preserveCase(ch, "v");
           continue;
         }
 
-        // Vowel swap (I↔E, A↔O, Y↔U)
         if (VOWEL_SWAP[low]){
           out += preserveCase(ch, VOWEL_SWAP[low]);
           continue;
         }
 
-        // unchanged
         out += ch;
       }
+
+      // Enforce: no words end in i/I
+      out = applyNoTerminalI(out);
 
       return out;
     }
 
     function translateText(text){
-      // 1) Split preserving whitespace
       let tokens = splitPreserveWhitespace(text);
-
-      // 2) Apply "H removed between nouns" (standalone h token)
       tokens = removeHBetweenNouns(tokens);
 
-      // 3) Transform each token's word portion, preserve punctuation and whitespace
       return tokens.map(tok => {
         if (/^\s+$/.test(tok)) return tok;
 
